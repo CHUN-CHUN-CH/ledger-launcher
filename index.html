@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f4f7f6" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="手機記帳" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="./apple-touch-icon.png" />
+    <title>手機記帳</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f7f6;
+        --ink: #172323;
+        --muted: #6b7777;
+        --primary: #2f6f7e;
+        --surface: rgba(255, 255, 255, 0.84);
+        --border: rgba(20, 40, 40, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+        background:
+          radial-gradient(circle at 20% 0%, rgba(118, 155, 150, 0.22), transparent 30%),
+          linear-gradient(180deg, #eef4f2 0%, var(--bg) 58%, #eef1ee 100%);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      }
+
+      main {
+        width: min(100%, 380px);
+        text-align: center;
+      }
+
+      .icon {
+        width: 96px;
+        height: 96px;
+        display: block;
+        margin: 0 auto 20px;
+        border-radius: 24px;
+        box-shadow: 0 18px 42px rgba(31, 65, 62, 0.18);
+      }
+
+      .panel {
+        padding: 28px 22px 22px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--surface);
+        box-shadow: 0 22px 54px rgba(31, 65, 62, 0.12);
+        backdrop-filter: blur(18px);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 32px;
+        line-height: 1.15;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.55;
+      }
+
+      a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: 52px;
+        margin-top: 24px;
+        border-radius: 14px;
+        background: var(--primary);
+        color: #fff;
+        font-size: 17px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .hint {
+        margin-top: 14px;
+        font-size: 13px;
+      }
+    </style>
+    <script>
+      const LEDGER_URL = "https://script.google.com/macros/s/AKfycbzTTIWcLmhzvJFV0oP0oMrkr_94Y0te7FXPbAiB54XPRs8_Bi5DLk3p_90dzXYSWjye/exec";
+
+      window.addEventListener("load", () => {
+        document.getElementById("openLedger").href = LEDGER_URL;
+        setTimeout(() => {
+          window.location.replace(LEDGER_URL);
+        }, 450);
+      });
+    </script>
+  </head>
+  <body>
+    <main>
+      <img class="icon" src="./apple-touch-icon.png" alt="" />
+      <section class="panel" aria-label="手機記帳啟動頁">
+        <h1>手機記帳</h1>
+        <p>正在開啟你的共用帳本。</p>
+        <a id="openLedger" href="https://script.google.com/macros/s/AKfycbzTTIWcLmhzvJFV0oP0oMrkr_94Y0te7FXPbAiB54XPRs8_Bi5DLk3p_90dzXYSWjye/exec">開啟手機記帳</a>
+        <p class="hint">加入主畫面請使用這個入口，圖示會正常顯示。</p>
+      </section>
+    </main>
+  </body>
+</html>
