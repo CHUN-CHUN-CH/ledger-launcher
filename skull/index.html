@@ -775,6 +775,188 @@
       .nav button {
         color: #d5c5d7;
       }
+
+      /* Gallery collectible refinement: quiet black, warm porcelain, silver edge, violet light. */
+      :root {
+        --bg: #111111;
+        --ink: #f5f4f2;
+        --muted: #9a9a9a;
+        --primary: #f5f4f2;
+        --income: #d9fff0;
+        --danger: #f1a7c6;
+        --warn: #e5e0d8;
+        --surface: rgba(26, 26, 26, 0.72);
+        --soft: rgba(245, 244, 242, 0.08);
+        --border: rgba(255, 255, 255, 0.08);
+        --shadow: 0 30px 90px rgba(0, 0, 0, 0.58);
+        --paper: rgba(245, 244, 242, 0.10);
+        --line: rgba(255, 255, 255, 0.045);
+        --clue: #7868ff;
+      }
+      body {
+        background:
+          radial-gradient(circle at var(--mx) var(--my), rgba(120, 104, 255, 0.18), transparent 280px),
+          radial-gradient(circle at 84% 12%, rgba(245, 244, 242, 0.11), transparent 150px),
+          radial-gradient(circle at 18% 24%, rgba(241, 167, 198, 0.10), transparent 180px),
+          linear-gradient(180deg, #111111 0%, #09090b 100%);
+      }
+      body::before {
+        background:
+          linear-gradient(112deg, transparent 0 48%, rgba(245,244,242,.055) 48% 48.14%, transparent 48.14% 100%),
+          radial-gradient(circle at 50% 18%, rgba(255,255,255,.08), transparent 170px) !important;
+        opacity: .78;
+      }
+      body::after {
+        right: -26px;
+        top: 118px;
+        width: 128px;
+        height: 168px;
+        border-radius: 54% 54% 45% 45% / 48% 48% 58% 58%;
+        border: 1px solid rgba(245, 244, 242, 0.16);
+        background:
+          radial-gradient(circle at 38% 36%, rgba(245,244,242,.34) 0 5px, transparent 6px),
+          radial-gradient(circle at 62% 36%, rgba(245,244,242,.34) 0 5px, transparent 6px),
+          radial-gradient(ellipse at 50% 73%, rgba(120,104,255,.12), transparent 38px),
+          linear-gradient(145deg, rgba(245,244,242,.09), rgba(245,244,242,.015));
+        opacity: .55;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 34px 100px rgba(120,104,255,.10);
+      }
+      .particle-field i {
+        width: 3px;
+        height: 3px;
+        background: rgba(245, 244, 242, 0.72);
+        box-shadow: 0 0 18px rgba(120, 104, 255, 0.62);
+        animation-duration: calc(var(--dur, 9s) * 1.6);
+      }
+      header {
+        padding-top: 18px;
+        padding-bottom: 22px;
+      }
+      .eyebrow {
+        color: rgba(245,244,242,.56);
+        font-size: 11px;
+        letter-spacing: 4px;
+        font-weight: 800;
+      }
+      h1 {
+        font-size: clamp(44px, 13vw, 64px);
+        color: #f5f4f2;
+        font-weight: 780;
+        text-shadow: 0 20px 52px rgba(0,0,0,.74), 0 0 34px rgba(120,104,255,.18);
+      }
+      h2 {
+        font-weight: 760;
+      }
+      .sync {
+        color: #f5f4f2;
+        background: rgba(245,244,242,.075);
+        border-color: rgba(245,244,242,.12);
+        box-shadow: 0 14px 40px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.08);
+      }
+      .card,
+      .stat,
+      .record,
+      .modal-card,
+      .status,
+      .empty {
+        background: linear-gradient(145deg, rgba(26,26,26,.82), rgba(15,15,16,.70));
+        border-color: rgba(255,255,255,.08);
+        border-radius: 24px;
+        box-shadow: 0 30px 90px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.055);
+      }
+      .card {
+        margin-top: 16px;
+        padding: 20px;
+      }
+      .card::before {
+        background:
+          radial-gradient(circle at 16% 0%, rgba(245,244,242,.07), transparent 36%),
+          linear-gradient(135deg, rgba(255,255,255,.028), transparent 44%),
+          repeating-linear-gradient(135deg, transparent 0 28px, rgba(255,255,255,.014) 28px 29px);
+      }
+      .card::after {
+        background: linear-gradient(110deg, transparent 22%, rgba(245,244,242,.07) 42%, transparent 56%);
+        animation-duration: 11s;
+      }
+      .hero-amount {
+        color: #f5f4f2;
+        font-weight: 760;
+        text-shadow: 0 0 38px rgba(120,104,255,.16);
+      }
+      .muted,
+      .stat small,
+      .record small {
+        color: #9a9a9a;
+      }
+      button,
+      input,
+      select,
+      textarea,
+      .segmented {
+        border-radius: 22px;
+        border-color: rgba(255,255,255,.08);
+        background: rgba(245,244,242,.06);
+      }
+      .segmented {
+        padding: 6px;
+      }
+      .segmented button.active,
+      .chip.active,
+      .nav button.active {
+        background: rgba(120,104,255,.16);
+        color: #f5f4f2;
+        border-color: rgba(120,104,255,.34);
+        box-shadow: 0 18px 44px rgba(0,0,0,.26), 0 0 28px rgba(120,104,255,.13), inset 0 0 0 1px rgba(255,255,255,.06);
+      }
+      .primary {
+        background: linear-gradient(135deg, #f5f4f2, #d7d2ca 52%, #8c8580);
+        color: #111111;
+        border-color: rgba(255,255,255,.18);
+        box-shadow: 0 22px 52px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.70);
+      }
+      .primary.income {
+        background: linear-gradient(135deg, #f1fffa, #c8f7e6 52%, #7fbbb1);
+        color: #101211;
+      }
+      .secondary {
+        color: #f5f4f2;
+        background: rgba(245,244,242,.07);
+      }
+      .progress {
+        background: rgba(245,244,242,.075);
+      }
+      .progress span {
+        background: linear-gradient(90deg, #f5f4f2, #7868ff);
+        box-shadow: 0 0 24px rgba(120,104,255,.35);
+      }
+      .stat,
+      .record {
+        border-radius: 22px;
+      }
+      .record {
+        box-shadow: inset 2px 0 0 rgba(120,104,255,.32), 0 18px 48px rgba(0,0,0,.26);
+      }
+      .mini {
+        border-radius: 18px;
+        color: #f5f4f2;
+        background: rgba(245,244,242,.065);
+      }
+      .mini.danger {
+        color: #f1a7c6;
+      }
+      .nav {
+        background: rgba(17, 17, 17, 0.76);
+        border-top-color: rgba(255,255,255,.08);
+        padding-top: 12px;
+      }
+      .nav button {
+        border-radius: 20px;
+        color: #9a9a9a;
+      }
+      @media (max-width: 380px) {
+        h1 { font-size: 42px; }
+        .card { padding: 17px; }
+      }
     </style>
   </head>
   <body>
