@@ -1,0 +1,1600 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#050817" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="帳本" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="180x180" href="./apple-touch-icon.png" />
+    <title>帳本</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f3efe4;
+        --ink: #121923;
+        --muted: #6d665b;
+        --primary: #183153;
+        --income: #1f7f73;
+        --danger: #b3404a;
+        --warn: #c48a1d;
+        --surface: rgba(255, 252, 242, 0.95);
+        --soft: #e8dfcc;
+        --border: rgba(30, 38, 52, 0.15);
+        --shadow: 0 18px 46px rgba(18, 25, 35, 0.16);
+        --paper: #fff9ea;
+        --line: rgba(24, 49, 83, 0.12);
+        --clue: #b3404a;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { min-height: 100%; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: max(18px, env(safe-area-inset-top)) 14px calc(92px + env(safe-area-inset-bottom));
+        background:
+          radial-gradient(circle at 16% 72px, rgba(195, 58, 69, 0.22), transparent 118px),
+          radial-gradient(circle at 88% 96px, rgba(245, 184, 63, 0.24), transparent 128px),
+          linear-gradient(180deg, rgba(24, 49, 83, 0.20), transparent 230px),
+          repeating-linear-gradient(135deg, transparent 0 18px, rgba(24, 49, 83, 0.035) 18px 19px),
+          var(--bg);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0 0 auto;
+        height: 190px;
+        pointer-events: none;
+        background:
+          linear-gradient(90deg, transparent 0 5%, rgba(18, 25, 35, 0.15) 5% 10%, transparent 10% 16%, rgba(18, 25, 35, 0.11) 16% 20%, transparent 20% 100%),
+          linear-gradient(180deg, rgba(24, 49, 83, 0.12), transparent);
+        mask-image: linear-gradient(180deg, #000, transparent);
+      }
+      body::after {
+        content: "";
+        position: fixed;
+        right: 18px;
+        top: max(24px, env(safe-area-inset-top));
+        width: 86px;
+        height: 86px;
+        border: 2px solid rgba(179, 64, 74, 0.28);
+        border-radius: 999px;
+        pointer-events: none;
+        box-shadow: inset 0 0 0 12px rgba(255, 249, 234, 0.46), 0 12px 30px rgba(18, 25, 35, 0.08);
+        transform: rotate(-12deg);
+      }
+
+      main { width: 100%; max-width: none; margin: 0; }
+      header {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 10px 4px 16px;
+      }
+      h1 { margin: 0; font-size: 34px; line-height: 1.05; letter-spacing: 0; }
+      h2 { margin: 0 0 12px; font-size: 20px; letter-spacing: 0; }
+      h3 { margin: 0; font-size: 17px; letter-spacing: 0; }
+      .eyebrow { display: block; margin-bottom: 5px; color: var(--danger); font-size: 12px; font-weight: 900; letter-spacing: 0.8px; }
+      .sync {
+        min-width: 84px;
+        padding: 7px 9px;
+        border: 1px solid rgba(24, 49, 83, 0.16);
+        border-radius: 8px;
+        background: rgba(255, 249, 234, 0.78);
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 900;
+        text-align: right;
+        box-shadow: 0 8px 18px rgba(18, 25, 35, 0.08);
+      }
+
+      .view { display: none; }
+      .view.active { display: block; }
+      .card {
+        position: relative;
+        margin-top: 12px;
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(90deg, transparent 0 22px, var(--line) 22px 23px, transparent 23px),
+          repeating-linear-gradient(0deg, transparent 0 30px, rgba(24, 49, 83, 0.045) 30px 31px);
+        opacity: 0.5;
+      }
+      .card > * { position: relative; z-index: 1; }
+
+      .hero-amount { margin-top: 8px; font-size: 52px; line-height: 1; font-weight: 900; letter-spacing: 0; color: var(--primary); }
+      .muted { color: var(--muted); }
+      .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .split, .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .stats.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .stat {
+        padding: 13px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.86);
+        box-shadow: inset 4px 0 0 rgba(24, 49, 83, 0.12);
+      }
+      .stat small, .record small { display: block; margin-top: 5px; color: var(--muted); font-size: 13px; line-height: 1.35; }
+      .stat strong { display: block; margin-top: 6px; font-size: 22px; }
+
+      .progress { height: 14px; margin: 13px 0 4px; border-radius: 999px; background: var(--soft); overflow: hidden; box-shadow: inset 0 1px 2px rgba(18, 25, 35, 0.12); }
+      .progress span { display: block; height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, var(--primary), #315f9e); }
+      .progress.warn span { background: var(--warn); }
+      .progress.danger span { background: var(--danger); }
+
+      button, input, select, textarea {
+        font: inherit;
+        border-radius: 8px;
+      }
+      button {
+        min-height: 48px;
+        border: 1px solid transparent;
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--ink);
+        font-weight: 900;
+      }
+      input, select, textarea {
+        width: 100%;
+        min-height: 52px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.90);
+        color: var(--ink);
+        font-size: 17px;
+        padding: 0 13px;
+      }
+      textarea { min-height: 84px; padding-top: 12px; resize: vertical; }
+      input[type="date"], input[type="month"] { text-align: center; }
+      label { display: grid; gap: 7px; margin-top: 13px; color: var(--muted); font-size: 14px; font-weight: 800; }
+      .amount { min-height: 76px; font-size: 38px; font-weight: 850; }
+
+      .segmented {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
+        padding: 5px;
+        border-radius: 8px;
+        background: rgba(232, 223, 204, 0.9);
+      }
+      .segmented.three { grid-template-columns: repeat(3, 1fr); }
+      .segmented button { background: transparent; color: #6b6258; }
+      .segmented button.active { background: var(--paper); color: var(--primary); box-shadow: 0 2px 10px rgba(18, 25, 35, 0.10), inset 0 -3px 0 var(--clue); }
+      .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+      .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .chip { min-width: 0; padding: 0 7px; border-color: var(--border); overflow-wrap: anywhere; }
+      .chip.active { border-color: rgba(179, 64, 74, 0.45); background: #fff1de; color: var(--primary); box-shadow: inset 0 -3px 0 rgba(179, 64, 74, 0.34); }
+
+      .primary {
+        width: 100%;
+        margin-top: 16px;
+        min-height: 56px;
+        background: linear-gradient(135deg, var(--primary), #274d82);
+        color: #fff;
+        font-size: 18px;
+        box-shadow: 0 12px 24px rgba(24, 49, 83, 0.22);
+      }
+      .primary.income { background: var(--income); }
+      .secondary { border-color: var(--border); color: var(--primary); }
+      .danger-text { color: var(--danger); }
+      .income-text { color: var(--income); }
+
+      .status {
+        margin-top: 12px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(255, 249, 234, 0.88);
+        color: var(--muted);
+        font-weight: 800;
+      }
+      .status.ok { border-color: rgba(35, 136, 111, 0.28); color: #16745d; background: #eef8f4; }
+      .status.error { border-color: rgba(182, 74, 82, 0.3); color: var(--danger); background: #fff0f0; }
+
+      .record {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: start;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: inset 4px 0 0 rgba(196, 138, 29, 0.18);
+      }
+      .record + .record { margin-top: 9px; }
+      .record strong { overflow-wrap: anywhere; }
+      .record-side {
+        display: grid;
+        justify-items: end;
+        gap: 12px;
+        min-width: 96px;
+      }
+      .record-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .mini {
+        min-height: 38px;
+        min-width: 54px;
+        padding: 0 12px;
+        border-color: var(--border);
+        color: var(--primary);
+        background: var(--paper);
+        font-size: 14px;
+      }
+      .mini.danger { color: var(--danger); }
+      .list { display: grid; gap: 9px; }
+      .empty {
+        padding: 18px;
+        border: 1px dashed rgba(24, 49, 83, 0.25);
+        border-radius: 8px;
+        background: rgba(255, 249, 234, 0.54);
+        color: var(--muted);
+        text-align: center;
+        font-weight: 800;
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        z-index: 30;
+        display: none;
+        place-items: end center;
+        padding: 18px 14px max(18px, env(safe-area-inset-bottom));
+        background: rgba(14, 24, 24, 0.42);
+      }
+      .modal.active { display: grid; }
+      .modal-card {
+        width: min(100%, 540px);
+        max-height: min(88vh, 720px);
+        overflow: auto;
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+      .modal-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 4px;
+      }
+
+      .filters {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        margin: 0 -14px;
+        padding: 8px 14px;
+        background: rgba(243, 239, 228, 0.92);
+        backdrop-filter: blur(14px);
+      }
+
+      .nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10;
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 6px;
+        padding: 10px 10px max(10px, env(safe-area-inset-bottom));
+        border-top: 1px solid var(--border);
+        background: rgba(255, 249, 234, 0.94);
+        backdrop-filter: blur(18px);
+      }
+      .nav button { min-height: 52px; color: var(--muted); font-size: 13px; }
+      .nav button.active { background: var(--paper); color: var(--primary); box-shadow: 0 8px 24px rgba(18, 25, 35, 0.14), inset 0 -3px 0 var(--clue); }
+
+      /* Premium theme inspired by 21st.dev glass cards, glow effects, and animated hero surfaces. */
+      :root {
+        color-scheme: dark;
+        --bg: #050817;
+        --ink: #f8fbff;
+        --muted: #aeb8c7;
+        --primary: #f4d78d;
+        --income: #38d6a2;
+        --danger: #ff6c81;
+        --warn: #f8bd4f;
+        --surface: rgba(10, 17, 37, 0.68);
+        --soft: rgba(255, 255, 255, 0.10);
+        --border: rgba(255, 255, 255, 0.17);
+        --shadow: 0 26px 70px rgba(0, 0, 0, 0.42);
+        --paper: rgba(255, 255, 255, 0.13);
+        --line: rgba(244, 215, 141, 0.10);
+        --clue: #f4d78d;
+        --mx: 50%;
+        --my: 18%;
+      }
+      html { background: #050817; }
+      body {
+        padding-top: max(20px, env(safe-area-inset-top));
+        isolation: isolate;
+        width: 100%;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at var(--mx) var(--my), rgba(244, 215, 141, 0.20), transparent 250px),
+          radial-gradient(circle at 72% 8%, rgba(255, 255, 255, 0.24), transparent 74px),
+          radial-gradient(circle at 18% 18%, rgba(67, 108, 222, 0.22), transparent 210px),
+          linear-gradient(155deg, #050817 0%, #0b1832 48%, #10172a 100%);
+        overflow-x: hidden;
+      }
+      body::before {
+        height: 100vh;
+        background:
+          linear-gradient(115deg, transparent 0 44%, rgba(255, 255, 255, 0.10) 44% 44.4%, transparent 44.4% 100%),
+          linear-gradient(72deg, transparent 0 62%, rgba(244, 215, 141, 0.10) 62% 62.4%, transparent 62.4% 100%),
+          radial-gradient(circle at 76% 18%, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0.10) 42px, transparent 58px);
+        mask-image: linear-gradient(180deg, #000, transparent 82%);
+        animation: moonDrift 12s ease-in-out infinite alternate;
+        z-index: -1;
+      }
+      body::after {
+        right: -36px;
+        top: 92px;
+        width: 150px;
+        height: 210px;
+        border-radius: 18px;
+        border-color: rgba(244, 215, 141, 0.25);
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.02));
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.18), 0 24px 80px rgba(0,0,0,.26);
+        transform: rotate(14deg);
+        z-index: -1;
+      }
+      .particle-field {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .particle-field i {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(244, 215, 141, 0.74);
+        box-shadow: 0 0 18px rgba(244, 215, 141, 0.72);
+        animation: particleFloat var(--dur, 9s) ease-in-out infinite;
+        opacity: .68;
+      }
+      .particle-field i:nth-child(1) { left: 9%; top: 20%; --dur: 8s; }
+      .particle-field i:nth-child(2) { left: 78%; top: 13%; --dur: 10s; }
+      .particle-field i:nth-child(3) { left: 88%; top: 44%; --dur: 11s; }
+      .particle-field i:nth-child(4) { left: 18%; top: 68%; --dur: 12s; }
+      .particle-field i:nth-child(5) { left: 54%; top: 82%; --dur: 9s; }
+      .particle-field i:nth-child(6) { left: 36%; top: 28%; --dur: 13s; }
+      main {
+        position: relative;
+        z-index: 1;
+        perspective: 1200px;
+      }
+      header {
+        padding-top: 14px;
+        animation: enterLift .72s cubic-bezier(.2,.8,.2,1) both;
+      }
+      h1 {
+        color: #fff;
+        font-size: clamp(34px, 9vw, 52px);
+        text-shadow: 0 12px 34px rgba(0,0,0,.52), 0 0 22px rgba(244,215,141,.18);
+      }
+      h2, h3 { color: #fff; }
+      .eyebrow {
+        color: var(--primary);
+        letter-spacing: 2.8px;
+        text-transform: uppercase;
+      }
+      .sync {
+        background: rgba(255, 255, 255, 0.11);
+        color: #f8e7b5;
+        border-color: rgba(244, 215, 141, 0.22);
+        backdrop-filter: blur(18px) saturate(130%);
+      }
+      .card,
+      .stat,
+      .record,
+      .modal-card,
+      .status,
+      .empty {
+        border-color: var(--border);
+        background: linear-gradient(145deg, rgba(255,255,255,.14), rgba(255,255,255,.055));
+        color: var(--ink);
+        backdrop-filter: blur(24px) saturate(145%);
+      }
+      .card {
+        border-radius: 18px;
+        transform-style: preserve-3d;
+        animation: enterLift .62s cubic-bezier(.2,.8,.2,1) both;
+      }
+      .card::before {
+        background:
+          linear-gradient(135deg, rgba(244, 215, 141, 0.18), transparent 32%),
+          radial-gradient(circle at 12% 0%, rgba(255,255,255,.18), transparent 38%),
+          repeating-linear-gradient(135deg, transparent 0 22px, rgba(255,255,255,.035) 22px 23px);
+        opacity: 1;
+        z-index: 0;
+      }
+      .card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        border-radius: inherit;
+        background: linear-gradient(100deg, transparent 15%, rgba(255,255,255,.20) 35%, transparent 52%);
+        transform: translateX(-130%);
+        animation: glassSweep 7s ease-in-out infinite;
+        z-index: 0;
+      }
+      .hero-amount {
+        color: #fff;
+        text-shadow: 0 0 26px rgba(244, 215, 141, .20);
+      }
+      .muted, .stat small, .record small { color: var(--muted); }
+      button,
+      input,
+      select,
+      textarea {
+        border-radius: 14px;
+      }
+      button,
+      input,
+      select,
+      textarea,
+      .segmented {
+        border-color: rgba(255,255,255,.15);
+        background: rgba(255,255,255,.09);
+        color: var(--ink);
+        backdrop-filter: blur(18px);
+      }
+      button { padding-inline: 10px; }
+      option { color: #111827; }
+      button { transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease; }
+      button:active { transform: scale(.97); }
+      .primary {
+        font-size: 17px;
+        background: linear-gradient(135deg, #f7de9f, #b98b35 56%, #6e4d16);
+        color: #071020;
+        box-shadow: 0 16px 34px rgba(244, 215, 141, 0.20), inset 0 1px 0 rgba(255,255,255,.45);
+      }
+      .primary.income {
+        background: linear-gradient(135deg, #48e0b3, #168e73);
+        color: #021611;
+      }
+      .secondary {
+        color: #f8e7b5;
+        background: rgba(255,255,255,.10);
+      }
+      .segmented {
+        border-radius: 16px;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+      }
+      .segmented button.active,
+      .chip.active,
+      .nav button.active {
+        background: rgba(244, 215, 141, 0.16);
+        color: #fff3c8;
+        border-color: rgba(244, 215, 141, 0.40);
+        box-shadow: 0 14px 28px rgba(0,0,0,.22), inset 0 0 0 1px rgba(244,215,141,.30);
+      }
+      .chip { min-height: 58px; }
+      .progress {
+        height: 12px;
+        background: rgba(255,255,255,.10);
+      }
+      .progress span {
+        background: linear-gradient(90deg, #f9e7ad, #d5a948);
+        box-shadow: 0 0 18px rgba(244,215,141,.48);
+      }
+      .record {
+        grid-template-columns: minmax(0, 1fr) minmax(92px, auto);
+        min-height: 112px;
+        align-items: center;
+        border-radius: 16px;
+        box-shadow: inset 3px 0 0 rgba(244, 215, 141, 0.30), 0 14px 34px rgba(0,0,0,.18);
+      }
+      .record-side {
+        align-self: stretch;
+        display: grid;
+        grid-template-rows: 1fr auto;
+        align-items: center;
+      }
+      .record-actions {
+        justify-content: flex-end;
+      }
+      .mini {
+        min-width: 72px;
+        border-radius: 13px;
+        background: rgba(255,255,255,.10);
+        color: #f8e7b5;
+      }
+      .mini.danger { color: #ff9aa8; }
+      .nav {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 5px;
+        padding-left: 8px;
+        padding-right: 8px;
+        background: rgba(5, 8, 23, 0.78);
+        border-top-color: rgba(244, 215, 141, 0.14);
+        backdrop-filter: blur(26px) saturate(160%);
+      }
+      .nav button {
+        border-radius: 16px;
+        color: #b8c1d1;
+        background: transparent;
+        min-height: 50px;
+        padding-inline: 3px;
+        font-size: 12px;
+      }
+      .filters {
+        background: rgba(5, 8, 23, 0.72);
+        backdrop-filter: blur(24px) saturate(160%);
+      }
+      .modal { background: rgba(0, 0, 0, 0.58); backdrop-filter: blur(8px); }
+      .modal-card {
+        border-radius: 20px 20px 14px 14px;
+        animation: modalRise .32s ease both;
+      }
+      @keyframes enterLift {
+        from { opacity: 0; transform: translateY(18px) scale(.985); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      @keyframes modalRise {
+        from { opacity: 0; transform: translateY(28px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes glassSweep {
+        0%, 45% { transform: translateX(-130%); opacity: 0; }
+        55% { opacity: .55; }
+        70%, 100% { transform: translateX(130%); opacity: 0; }
+      }
+      @keyframes particleFloat {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(18px, -34px, 0) scale(1.6); }
+      }
+      @keyframes moonDrift {
+        from { transform: translateY(0); }
+        to { transform: translateY(16px); }
+      }
+      body::before {
+        background:
+          radial-gradient(circle at 74% 14%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.08) 42px, transparent 72px),
+          radial-gradient(circle at 14% 16%, rgba(244, 215, 141, 0.12), transparent 160px) !important;
+        opacity: .72;
+      }
+      main {
+        width: 100%;
+        max-width: none;
+        margin-inline: 0;
+        overflow: visible;
+      }
+      button,
+      .stat,
+      .record,
+      .chip,
+      .nav button {
+        min-width: 0;
+      }
+      .card,
+      .stat,
+      .record,
+      .modal-card {
+        background: linear-gradient(145deg, rgba(14, 26, 56, .92), rgba(8, 14, 31, .82));
+      }
+      .card::after {
+        background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.08) 36%, transparent 52%);
+      }
+      .card::before {
+        background:
+          radial-gradient(circle at 12% 0%, rgba(255,255,255,.10), transparent 34%),
+          repeating-linear-gradient(135deg, transparent 0 24px, rgba(255,255,255,.018) 24px 25px);
+      }
+      .hero-amount,
+      h1,
+      h2,
+      h3,
+      .stat strong,
+      .record strong {
+        opacity: 1;
+        color: #fff;
+      }
+      .split,
+      .stats,
+      .grid,
+      .nav {
+        max-width: 100%;
+      }
+      .split,
+      .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .stats.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .nav {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        width: 100%;
+        max-width: none;
+        left: 0;
+        right: 0;
+        transform: none;
+      }
+
+      @media (max-width: 380px) {
+        h1 { font-size: 29px; }
+        .hero-amount { font-size: 44px; }
+        .primary { font-size: 15px; }
+        .split { gap: 8px; }
+        .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .stats.three { grid-template-columns: 1fr; }
+        .record { grid-template-columns: 1fr; }
+        .record-side {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+        }
+        .nav { gap: 4px; }
+        .nav button { font-size: 11px; border-radius: 13px; }
+      }
+
+      /* Designer-toy dark cute edition: monochrome porcelain, pink mist, star dust. */
+      :root {
+        --bg: #08070c;
+        --ink: #fff7fb;
+        --muted: #c7b7c8;
+        --primary: #f6e8ff;
+        --income: #a6f7dd;
+        --danger: #ff86b7;
+        --warn: #ffd0ef;
+        --surface: rgba(28, 22, 34, 0.76);
+        --soft: rgba(255, 255, 255, 0.11);
+        --border: rgba(255, 226, 246, 0.22);
+        --shadow: 0 28px 76px rgba(0, 0, 0, 0.55);
+        --paper: rgba(255, 246, 252, 0.13);
+        --line: rgba(255, 198, 231, 0.11);
+        --clue: #ff9fd1;
+      }
+      body {
+        background:
+          radial-gradient(circle at var(--mx) var(--my), rgba(255, 168, 213, 0.24), transparent 250px),
+          radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.16), transparent 120px),
+          radial-gradient(circle at 86% 20%, rgba(189, 142, 255, 0.22), transparent 180px),
+          linear-gradient(155deg, #08070c 0%, #17111f 45%, #0a0a14 100%);
+      }
+      body::before {
+        background:
+          radial-gradient(circle at 77% 12%, rgba(255, 244, 253, 0.24), rgba(255, 199, 230, 0.09) 44px, transparent 76px),
+          radial-gradient(circle at 22% 18%, rgba(255, 120, 187, 0.16), transparent 150px),
+          linear-gradient(115deg, transparent 0 42%, rgba(255,255,255,.08) 42% 42.3%, transparent 42.3% 100%) !important;
+        opacity: .9;
+      }
+      body::after {
+        right: -44px;
+        top: 92px;
+        width: 132px;
+        height: 168px;
+        border-radius: 42% 42% 54% 54%;
+        border: 1px solid rgba(255, 222, 243, 0.26);
+        background:
+          radial-gradient(circle at 38% 36%, rgba(255,255,255,.38) 0 6px, transparent 7px),
+          radial-gradient(circle at 62% 36%, rgba(255,255,255,.38) 0 6px, transparent 7px),
+          radial-gradient(ellipse at 50% 70%, rgba(255, 141, 202, .12), transparent 34px),
+          linear-gradient(145deg, rgba(255,255,255,.10), rgba(255,255,255,.02));
+        opacity: .72;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.10), 0 24px 80px rgba(255, 117, 185, .08);
+        transform: rotate(8deg);
+      }
+      .particle-field i {
+        width: 5px;
+        height: 5px;
+        background: rgba(255, 176, 220, 0.86);
+        box-shadow: 0 0 20px rgba(255, 141, 202, 0.82);
+      }
+      .eyebrow {
+        color: #ffb8dc;
+        letter-spacing: 3px;
+      }
+      h1 {
+        color: #fff7fb;
+        text-shadow: 0 14px 36px rgba(0,0,0,.72), 0 0 30px rgba(255, 145, 204, .34);
+      }
+      .sync {
+        color: #ffe3f2;
+        border-color: rgba(255, 178, 220, .30);
+        background: rgba(255, 255, 255, .10);
+      }
+      .card,
+      .stat,
+      .record,
+      .modal-card {
+        background: linear-gradient(145deg, rgba(35, 27, 44, .92), rgba(10, 10, 18, .82));
+        border-color: rgba(255, 224, 244, .20);
+        box-shadow: 0 28px 70px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.10);
+      }
+      .card::before {
+        background:
+          radial-gradient(circle at 12% 0%, rgba(255, 229, 247, .14), transparent 34%),
+          repeating-linear-gradient(135deg, transparent 0 22px, rgba(255,255,255,.018) 22px 23px);
+      }
+      .card::after {
+        background: linear-gradient(100deg, transparent 20%, rgba(255, 216, 240, .11) 36%, transparent 52%);
+      }
+      .hero-amount {
+        color: #fff;
+        text-shadow: 0 0 30px rgba(255, 139, 202, .22);
+      }
+      .primary {
+        background: linear-gradient(135deg, #fff4fb, #ff9fd1 54%, #8d4d73);
+        color: #1b0c17;
+        box-shadow: 0 18px 38px rgba(255, 139, 202, .22), inset 0 1px 0 rgba(255,255,255,.55);
+      }
+      .primary.income {
+        background: linear-gradient(135deg, #e9fff7, #86eecf 55%, #257864);
+        color: #061511;
+      }
+      .segmented button.active,
+      .chip.active,
+      .nav button.active {
+        background: rgba(255, 159, 209, 0.16);
+        color: #ffeaf6;
+        border-color: rgba(255, 184, 220, 0.46);
+        box-shadow: 0 14px 30px rgba(0,0,0,.24), inset 0 0 0 1px rgba(255,184,220,.32);
+      }
+      .progress span {
+        background: linear-gradient(90deg, #fff4fb, #ff9fd1);
+        box-shadow: 0 0 22px rgba(255, 139, 202, .58);
+      }
+      .record {
+        box-shadow: inset 3px 0 0 rgba(255, 159, 209, 0.34), 0 14px 34px rgba(0,0,0,.22);
+      }
+      .nav {
+        background: rgba(8, 7, 12, 0.82);
+        border-top-color: rgba(255, 184, 220, 0.16);
+      }
+      .nav button {
+        color: #d5c5d7;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="particle-field" aria-hidden="true">
+      <i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+    <main>
+      <header>
+        <div>
+          <span class="eyebrow">DARK TOY LEDGER</span>
+          <h1>帳本</h1>
+        </div>
+        <div class="sync" id="syncLabel">同步中</div>
+      </header>
+
+      <section class="view active" id="homeView">
+        <div class="card" id="budgetCard"></div>
+        <div class="stats three" id="summaryCards"></div>
+        <div class="split">
+          <button class="primary" type="button" data-go="entry" data-entry-type="expense">+ 新增支出</button>
+          <button class="primary income" type="button" data-go="entry" data-entry-type="income">+ 新增收入</button>
+        </div>
+        <div class="card">
+          <div class="row"><h2>即將扣款</h2><span class="muted">7 天內</span></div>
+          <div id="upcomingList" class="list"></div>
+        </div>
+        <div class="card">
+          <div class="row"><h2>最近紀錄</h2><span class="muted" id="recentCount"></span></div>
+          <div id="recentList" class="list"></div>
+        </div>
+      </section>
+
+      <section class="view" id="entryView">
+        <div class="card">
+          <div class="segmented" aria-label="收入支出">
+            <button type="button" class="active" data-type="expense">支出</button>
+            <button type="button" data-type="income">收入</button>
+          </div>
+          <label>金額<input id="amount" class="amount" type="number" inputmode="decimal" min="0" step="1" placeholder="0" autocomplete="off" /></label>
+          <div class="split">
+            <label>日期<input id="date" type="date" /></label>
+            <label>幣別<select id="currency"></select></label>
+          </div>
+          <label>帳本<div class="grid two" id="scopeGrid"></div></label>
+          <label>分類<div class="grid" id="categoryGrid"></div></label>
+          <label>品名<input id="merchant" type="text" placeholder="例如 午餐、Apple 雲端、藥局" autocomplete="off" /></label>
+          <label>付款方式<div class="grid two" id="paymentGrid"></div></label>
+          <label>備註<textarea id="note" placeholder="可不填"></textarea></label>
+          <button id="submit" class="primary" type="button">新增支出</button>
+          <div id="status" class="status">尚未送出</div>
+        </div>
+      </section>
+
+      <section class="view" id="recordsView">
+        <div class="filters">
+          <div class="split">
+            <input id="monthFilter" type="month" />
+            <select id="scopeFilter">
+              <option value="all">全部帳本</option>
+              <option value="personal">自己花費</option>
+              <option value="home">家裡開銷</option>
+            </select>
+          </div>
+        </div>
+        <div class="card">
+          <div class="row"><h2>當月明細</h2><span class="muted" id="recordCount"></span></div>
+          <div id="recordsList" class="list"></div>
+        </div>
+      </section>
+
+      <section class="view" id="analysisView">
+        <div class="filters">
+          <div class="split">
+            <input id="analysisMonth" type="month" />
+            <select id="analysisScope">
+              <option value="all">全部帳本</option>
+              <option value="personal">自己花費</option>
+              <option value="home">家裡開銷</option>
+            </select>
+          </div>
+        </div>
+        <div class="card">
+          <h2>收支分析</h2>
+          <div class="stats three" id="analysisSummary"></div>
+        </div>
+        <div class="card">
+          <h2>分類支出</h2>
+          <div id="categoryAnalysis" class="list"></div>
+        </div>
+        <div class="card">
+          <h2>付款方式</h2>
+          <div id="paymentAnalysis" class="list"></div>
+        </div>
+      </section>
+
+      <section class="view" id="fixedView">
+        <div class="card">
+          <h2>固定項目</h2>
+          <div class="segmented three" aria-label="固定項目類型">
+            <button type="button" class="active" data-fixed-kind="expense">固定支出</button>
+            <button type="button" data-fixed-kind="income">固定收入</button>
+            <button type="button" data-fixed-kind="investment">定期投資</button>
+          </div>
+          <label>名稱<input id="fixedName" type="text" placeholder="例如 Netflix、房租、0050 定期定額" autocomplete="off" /></label>
+          <label>金額<input id="fixedAmount" type="number" inputmode="decimal" min="0" step="1" placeholder="0" /></label>
+          <div class="split">
+            <label>開始日期<input id="fixedStart" type="date" /></label>
+            <label>每月幾號扣款<input id="fixedDueDay" type="number" inputmode="numeric" min="1" max="31" placeholder="5" /></label>
+          </div>
+          <div class="split">
+            <label>頻率
+              <select id="fixedFrequency">
+                <option value="monthly">每月</option>
+                <option value="weekly">每週</option>
+                <option value="quarterly">每季</option>
+                <option value="yearly">每年</option>
+                <option value="custom_months">自訂月數</option>
+              </select>
+            </label>
+            <label>間隔<input id="fixedInterval" type="number" inputmode="numeric" min="1" value="1" /></label>
+          </div>
+          <label>狀態
+            <select id="fixedStatusMode">
+              <option value="active">啟用，到期自動記帳</option>
+              <option value="paused">暫停，只保留設定不自動記帳</option>
+            </select>
+          </label>
+          <div class="split">
+            <label>幣別<select id="fixedCurrency"></select></label>
+            <label>帳本
+              <select id="fixedScope">
+                <option value="personal">自己花費</option>
+                <option value="home">家裡開銷</option>
+              </select>
+            </label>
+          </div>
+          <div class="split">
+            <label>分類<select id="fixedCategory"></select></label>
+            <label>付款方式<select id="fixedPayment"></select></label>
+          </div>
+          <label>備註<textarea id="fixedNote" placeholder="可不填"></textarea></label>
+          <button id="saveRecurring" class="primary" type="button">儲存固定項目</button>
+          <button id="ensureTrigger" class="primary secondary" type="button">啟用每日自動扣款</button>
+          <div id="fixedStatus" class="status">固定項目會在到期日自動建立交易，不用每月手動記一次</div>
+        </div>
+        <div class="card">
+          <div class="row"><h2>已設定項目</h2><span class="muted" id="fixedCount"></span></div>
+          <div id="fixedList" class="list"></div>
+        </div>
+      </section>
+
+      <section class="view" id="settingsView">
+        <div class="card">
+          <h2>同步設定</h2>
+          <label>寫入密鑰<input id="apiKey" type="password" autocomplete="off" placeholder="第一次使用才需要填" /></label>
+          <button id="saveKey" class="primary" type="button">儲存密鑰</button>
+          <button id="syncNow" class="primary secondary" type="button">立即同步</button>
+          <div id="settingsStatus" class="status">資料會先顯示手機快取，再背景同步 Google Sheets</div>
+        </div>
+        <div class="card">
+          <h2>資料狀態</h2>
+          <div id="dataStatus" class="list"></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="modal" id="editModal" aria-hidden="true">
+      <form class="modal-card" id="editForm">
+        <div class="row">
+          <div>
+            <h2>編輯明細</h2>
+            <span class="muted">改錯分類、品名、金額或日期</span>
+          </div>
+          <button class="mini" type="button" id="closeEdit">關閉</button>
+        </div>
+        <input id="editId" type="hidden" />
+        <div class="split">
+          <label>類型
+            <select id="editType">
+              <option value="expense">支出</option>
+              <option value="income">收入</option>
+            </select>
+          </label>
+          <label>日期<input id="editDate" type="date" /></label>
+        </div>
+        <div class="split">
+          <label>金額<input id="editAmount" type="number" inputmode="decimal" min="0" step="1" /></label>
+          <label>幣別<select id="editCurrency"></select></label>
+        </div>
+        <div class="split">
+          <label>帳本
+            <select id="editScope">
+              <option value="personal">自己花費</option>
+              <option value="home">家裡開銷</option>
+            </select>
+          </label>
+          <label>分類<select id="editCategory"></select></label>
+        </div>
+        <label>品名<input id="editMerchant" type="text" autocomplete="off" /></label>
+        <label>付款方式<select id="editPayment"></select></label>
+        <label>備註<textarea id="editNote"></textarea></label>
+        <div id="editStatus" class="status">修改後會同步到 Google Sheets</div>
+        <button class="primary" id="saveEdit" type="submit">儲存修改</button>
+        <div class="modal-actions">
+          <button class="secondary" id="cancelEdit" type="button">取消</button>
+          <button class="mini danger" id="deleteEdit" type="button">刪除這筆</button>
+        </div>
+      </form>
+    </div>
+
+    <nav class="nav" aria-label="主選單">
+      <button class="active" type="button" data-view="home">首頁</button>
+      <button type="button" data-view="entry">記帳</button>
+      <button type="button" data-view="records">明細</button>
+      <button type="button" data-view="fixed">固定</button>
+      <button type="button" data-view="analysis">分析</button>
+      <button type="button" data-view="settings">設定</button>
+    </nav>
+
+    <script>
+      const API_URL = "https://script.google.com/macros/s/AKfycbzTTIWcLmhzvJFV0oP0oMrkr_94Y0te7FXPbAiB54XPRs8_Bi5DLk3p_90dzXYSWjye/exec";
+      const KEY_STORAGE = "ledgerShortcutApiKey";
+      const DATA_STORAGE = "ledgerAppStateV1";
+      const currencies = ["TWD", "JPY", "USD", "EUR", "HKD", "KRW", "CNY"];
+      const seedCategories = {
+        expense: ["餐飲", "交通", "購物", "生活", "娛樂", "醫療", "旅行", "房租", "保險", "訂閱", "分期付款", "投資", "其他支出"],
+        income: ["薪資", "獎金", "投資收入", "利息", "退款", "兼職", "禮金", "其他收入"]
+      };
+      const seedPayments = [
+        { id: "dbs", name: "星展卡" },
+        { id: "ctbc", name: "中信卡" },
+        { id: "cathay", name: "國泰卡" },
+        { id: "jko", name: "吉鶴卡" },
+        { id: "cash", name: "現金" },
+        { id: "unknown", name: "未分類付款" }
+      ];
+      const scopes = [["personal", "自己花費"], ["home", "家裡開銷"]];
+      const state = {
+        view: "home",
+        entryType: "expense",
+        scope: localStorage.getItem("ledgerScope") || "personal",
+        category: localStorage.getItem("ledgerCategory") || "餐飲",
+        payment: localStorage.getItem("ledgerPayment") || "dbs",
+        currency: localStorage.getItem("ledgerCurrency") || "TWD",
+        fixedKind: localStorage.getItem("ledgerFixedKind") || "expense",
+        month: monthIso(),
+        scopeFilter: "all",
+        data: loadCachedData()
+      };
+      const $ = (selector) => document.querySelector(selector);
+
+      function todayIso() {
+        const date = new Date();
+        date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+        return date.toISOString().slice(0, 10);
+      }
+      function monthIso() { return todayIso().slice(0, 7); }
+      function money(value) { return "$" + Math.round(Number(value || 0)).toLocaleString("zh-TW"); }
+      function labelScope(value) { return value === "home" ? "家裡開銷" : value === "personal" ? "自己花費" : "未分類帳本"; }
+      function setStatus(node, text, type = "") { node.textContent = text; node.className = `status ${type}`.trim(); }
+      function emptyData() { return { ok: true, transactions: [], categories: [], payments: seedPayments, budgets: [], recurring: [], installmentPlans: [], trips: [] }; }
+      function loadCachedData() {
+        try { return JSON.parse(localStorage.getItem(DATA_STORAGE)) || emptyData(); } catch (_) { return emptyData(); }
+      }
+      function saveCachedData(data) { localStorage.setItem(DATA_STORAGE, JSON.stringify(data)); }
+
+      function jsonp(params) {
+        return new Promise((resolve, reject) => {
+          const callback = `ledgerCb_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+          const url = new URL(API_URL);
+          Object.entries({ ...params, callback }).forEach(([key, value]) => url.searchParams.set(key, value == null ? "" : String(value)));
+          const script = document.createElement("script");
+          const timer = setTimeout(() => { cleanup(); reject(new Error("連線逾時")); }, 25000);
+          function cleanup() { clearTimeout(timer); delete window[callback]; script.remove(); }
+          window[callback] = (payload) => { cleanup(); resolve(payload); };
+          script.onerror = () => { cleanup(); reject(new Error("送出失敗")); };
+          script.src = url.toString();
+          document.body.appendChild(script);
+        });
+      }
+
+      function normalizeData(data) {
+        const copy = data || emptyData();
+        copy.categories = copy.categories || [];
+        copy.payments = copy.payments || [];
+        copy.budgets = copy.budgets || [];
+        copy.transactions = (copy.transactions || []).map((row) => ({
+          id: row.transaction_id || row.id || "",
+          type: row.transaction_type || "expense",
+          scope: row.account_scope || "personal",
+          date: String(row.date || "").slice(0, 10),
+          amount: Number(row.amount_twd || row.original_amount || 0),
+          originalAmount: Number(row.original_amount || row.amount_twd || 0),
+          currency: row.currency || "TWD",
+          categoryId: row.category_id || "",
+          paymentId: row.payment_id || "",
+          exchangeRate: row.exchange_rate || "",
+          category: categoryName(row.category_id, copy.categories),
+          payment: paymentName(row.payment_id, copy.payments),
+          merchant: row.merchant || "",
+          note: row.note || ""
+        })).filter((row) => row.date);
+        copy.recurring = (copy.recurring || []).map((row) => ({
+          id: row.recurring_id || "",
+          name: row.name || "",
+          type: row.transaction_type || "expense",
+          amount: Number(row.amount || 0),
+          currency: row.currency || "TWD",
+          category: categoryName(row.category_id, copy.categories),
+          payment: paymentName(row.payment_id, copy.payments),
+          scope: row.account_scope || "personal",
+          frequency: row.frequency || "monthly",
+          interval: Number(row.interval_value || 1),
+          dueDay: row.due_day || "",
+          nextDueDate: String(row.next_due_date || "").slice(0, 10),
+          status: row.status || "active",
+          autoGenerate: row.auto_generate !== false && row.auto_generate !== "FALSE",
+          note: row.note || ""
+        }));
+        return copy;
+      }
+
+      function categoryName(value, categories = state.data.categories || []) {
+        const text = String(value || "").trim();
+        if (!text) return "其他支出";
+        const found = categories.find((row) => row.category_id === text || row.name === text);
+        if (!found && /^cat_/i.test(text)) return "未分類";
+        return found ? found.name : text;
+      }
+      function paymentName(value, payments = state.data.payments || []) {
+        const text = String(value || "").trim();
+        const found = payments.find((row) => row.payment_id === text || row.id === text || row.card_name === text);
+        if (found) return found.card_name || found.name || text;
+        return seedPayments.find((row) => row.id === text)?.name || text || "未分類付款";
+      }
+      function paymentId(value) {
+        const target = String(value || "").trim();
+        const found = (state.data.payments || []).find((row) => (row.card_name || row.name) === target || row.payment_id === target || row.id === target);
+        return found ? (found.payment_id || found.id) : (seedPayments.find((row) => row.name === target)?.id || target);
+      }
+      function availableCategories(type) {
+        const fromSheet = (state.data.categories || [])
+          .filter((row) => (row.transaction_type || type) === type && row.active !== false && row.active !== "FALSE")
+          .map((row) => row.name || row.category_id)
+          .filter(Boolean);
+        return [...new Set([...(fromSheet.length ? fromSheet : seedCategories[type]), ...seedCategories[type]])];
+      }
+      function availablePayments() {
+        const fromSheet = (state.data.payments || [])
+          .filter((row) => row.active !== false && row.active !== "FALSE")
+          .map((row) => ({ id: row.payment_id || row.id || row.card_name, name: row.card_name || row.name || row.payment_id }))
+          .filter((row) => row.id && row.name);
+        return fromSheet.length ? fromSheet : seedPayments;
+      }
+      function monthTransactions(month = state.month, scope = "all") {
+        return (state.data.transactions || [])
+          .filter((row) => row.date.slice(0, 7) === month)
+          .filter((row) => scope === "all" || row.scope === scope)
+          .sort((a, b) => b.date.localeCompare(a.date));
+      }
+      function sum(rows, type) {
+        return rows.filter((row) => !type || row.type === type).reduce((total, row) => total + Number(row.amount || 0), 0);
+      }
+      function groupSum(rows, key) {
+        return rows.reduce((map, row) => {
+          const label = row[key] || "未分類";
+          map[label] = (map[label] || 0) + Number(row.amount || 0);
+          return map;
+        }, {});
+      }
+      function monthlyBudget() {
+        const [year, month] = state.month.split("-").map(Number);
+        const rows = state.data.budgets || [];
+        const monthly = rows.find((row) => row.budget_type === "monthly_total" && Number(row.year) === year && Number(row.month) === month && row.active !== false);
+        const def = rows.find((row) => row.budget_type === "default_monthly" && row.active !== false);
+        return Number((monthly || def || {}).amount || 30000);
+      }
+
+      function render() {
+        renderNav();
+        renderEntry();
+        renderHome();
+        renderRecords();
+        renderFixed();
+        renderAnalysis();
+        renderSettings();
+      }
+      function renderNav() {
+        document.querySelectorAll(".view").forEach((node) => node.classList.toggle("active", node.id === `${state.view}View`));
+        document.querySelectorAll(".nav [data-view]").forEach((button) => button.classList.toggle("active", button.dataset.view === state.view));
+      }
+      function renderEntry() {
+        document.querySelectorAll("[data-type]").forEach((button) => button.classList.toggle("active", button.dataset.type === state.entryType));
+        const categories = availableCategories(state.entryType);
+        if (!categories.includes(state.category)) state.category = categories[0];
+        $("#currency").innerHTML = currencies.map((item) => `<option ${item === state.currency ? "selected" : ""}>${item}</option>`).join("");
+        $("#scopeGrid").innerHTML = scopes.map(([value, label]) => `<button class="chip ${value === state.scope ? "active" : ""}" type="button" data-scope="${value}">${label}</button>`).join("");
+        $("#categoryGrid").innerHTML = categories.map((item) => `<button class="chip ${item === state.category ? "active" : ""}" type="button" data-category="${item}">${item}</button>`).join("");
+        $("#paymentGrid").innerHTML = availablePayments().map((item) => `<button class="chip ${item.id === state.payment ? "active" : ""}" type="button" data-payment="${item.id}">${item.name}</button>`).join("");
+        $("#submit").classList.toggle("income", state.entryType === "income");
+        $("#submit").textContent = state.entryType === "income" ? "新增收入" : "新增支出";
+      }
+      function renderHome() {
+        const rows = monthTransactions(state.month);
+        const income = sum(rows, "income");
+        const expense = sum(rows, "expense");
+        const budget = monthlyBudget();
+        const remaining = budget - expense;
+        const ratio = budget ? Math.round(expense / budget * 100) : 0;
+        const level = ratio >= 100 ? "danger" : ratio >= 70 ? "warn" : "";
+        $("#budgetCard").innerHTML = `
+          <div class="row"><div><span class="muted">本月預算</span><h2>${money(budget)}</h2></div><strong>${ratio >= 100 ? "已超支" : ratio >= 70 ? "接近預算" : "正常"}</strong></div>
+          <div class="hero-amount">${money(remaining)}</div>
+          <div class="muted">剩餘可用</div>
+          <div class="progress ${level}"><span style="width:${Math.min(ratio, 100)}%"></span></div>
+          <div class="stats three">
+            <div class="stat"><small>已花費</small><strong>${money(expense)}</strong></div>
+            <div class="stat"><small>使用比例</small><strong>${ratio}%</strong></div>
+            <div class="stat"><small>本月結餘</small><strong>${money(income - expense)}</strong></div>
+          </div>`;
+        $("#summaryCards").innerHTML = [
+          ["本月收入", income, "income-text"],
+          ["本月支出", expense, "danger-text"],
+          ["本月結餘", income - expense, ""]
+        ].map(([label, value, cls]) => `<div class="stat"><small>${label}</small><strong class="${cls}">${money(value)}</strong></div>`).join("");
+        const recent = rows.slice(0, 8);
+        $("#recentCount").textContent = `${rows.length} 筆`;
+        $("#recentList").innerHTML = recent.length ? recent.map(recordHtml).join("") : `<div class="empty">這個月還沒有紀錄</div>`;
+        const upcoming = upcomingItems().slice(0, 6);
+        $("#upcomingList").innerHTML = upcoming.length ? upcoming.map((item) => `<div class="record"><div><strong>${item.name}</strong><small>${item.sub}</small></div><strong>${item.date}</strong></div>`).join("") : `<div class="empty">7 天內沒有扣款</div>`;
+      }
+      function upcomingItems() {
+        const today = new Date(todayIso() + "T00:00:00");
+        const max = new Date(today);
+        max.setDate(max.getDate() + 7);
+        const list = [];
+        (state.data.recurring || []).forEach((row) => {
+          const date = String(row.next_due_date || "").slice(0, 10);
+          if (within(date, today, max)) list.push({ date: date.slice(5).replace("-", "/"), name: row.name, sub: `${row.transaction_type === "income" ? "固定收入" : "固定支出"} ${money(row.amount)}` });
+        });
+        (state.data.installmentPlans || []).forEach((row) => {
+          const date = String(row.nextDueDate || row.next_due_date || row.start_date || "").slice(0, 10);
+          if (within(date, today, max)) list.push({ date: date.slice(5).replace("-", "/"), name: row.name, sub: `分期付款 ${money(row.installment_amount)}` });
+        });
+        return list.sort((a, b) => a.date.localeCompare(b.date));
+      }
+      function within(date, start, end) {
+        if (!date) return false;
+        const value = new Date(date + "T00:00:00");
+        return value >= start && value <= end;
+      }
+      function renderRecords() {
+        $("#monthFilter").value = state.month;
+        $("#scopeFilter").value = state.scopeFilter;
+        const rows = monthTransactions(state.month, state.scopeFilter);
+        $("#recordCount").textContent = `${rows.length} 筆`;
+        $("#recordsList").innerHTML = rows.length ? rows.map(recordHtml).join("") : `<div class="empty">這個月份沒有資料</div>`;
+      }
+      function fixedTransactionType() {
+        return state.fixedKind === "income" ? "income" : "expense";
+      }
+      function fixedDefaultCategory() {
+        if (state.fixedKind === "investment") return "投資";
+        return fixedTransactionType() === "income" ? "薪資" : "訂閱";
+      }
+      function frequencyLabel(value, interval = 1) {
+        const labels = { weekly: "每週", monthly: "每月", quarterly: "每季", yearly: "每年", custom_months: `每 ${interval} 個月` };
+        return labels[value] || value || "每月";
+      }
+      function statusLabel(value) {
+        const labels = { active: "進行中", paused: "已暫停", completed: "已完成", cancelled: "已取消" };
+        return labels[value] || value || "未設定";
+      }
+      function renderFixed() {
+        document.querySelectorAll("[data-fixed-kind]").forEach((button) => button.classList.toggle("active", button.dataset.fixedKind === state.fixedKind));
+        const type = fixedTransactionType();
+        const categories = availableCategories(type);
+        const selectedCategory = categories.includes(fixedDefaultCategory()) ? fixedDefaultCategory() : categories[0];
+        $("#fixedCurrency").innerHTML = currencies.map((item) => `<option value="${item}" ${item === state.currency ? "selected" : ""}>${item}</option>`).join("");
+        $("#fixedCategory").innerHTML = categories.map((item) => `<option value="${item}" ${item === selectedCategory ? "selected" : ""}>${item}</option>`).join("");
+        $("#fixedPayment").innerHTML = availablePayments().map((item) => `<option value="${item.id}" ${item.id === state.payment ? "selected" : ""}>${item.name}</option>`).join("");
+        $("#fixedScope").value = state.scope;
+        const buttonText = state.fixedKind === "investment" ? "儲存定期定額投資" : state.fixedKind === "income" ? "儲存固定收入" : "儲存固定支出";
+        $("#saveRecurring").textContent = buttonText;
+        $("#fixedStatusMode").value = state.fixedKind === "income" ? "paused" : "active";
+        const rows = (state.data.recurring || []).filter((row) => row.status !== "cancelled").sort((a, b) => (a.nextDueDate || "").localeCompare(b.nextDueDate || ""));
+        $("#fixedCount").textContent = `${rows.length} 個`;
+        $("#fixedList").innerHTML = rows.length ? rows.map((row) => `
+          <div class="record">
+            <div>
+              <strong>${row.name || "未命名"}</strong>
+              <small>${labelScope(row.scope)} · ${row.category} · ${frequencyLabel(row.frequency, row.interval)} · 下次 ${row.nextDueDate || "未設定"}</small>
+            </div>
+            <div class="record-side">
+              <strong>${money(row.amount)}</strong>
+              <small>${statusLabel(row.status)}</small>
+            </div>
+          </div>
+        `).join("") : `<div class="empty">還沒有固定項目</div>`;
+      }
+      function renderAnalysis() {
+        $("#analysisMonth").value = state.month;
+        $("#analysisScope").value = state.scopeFilter;
+        const rows = monthTransactions(state.month, state.scopeFilter);
+        const expenses = rows.filter((row) => row.type === "expense");
+        const income = sum(rows, "income");
+        const expense = sum(rows, "expense");
+        $("#analysisSummary").innerHTML = [
+          ["收入", income, "income-text"],
+          ["支出", expense, "danger-text"],
+          ["差額", income - expense, ""]
+        ].map(([label, value, cls]) => `<div class="stat"><small>${label}</small><strong class="${cls}">${money(value)}</strong></div>`).join("");
+        $("#categoryAnalysis").innerHTML = summaryList(groupSum(expenses, "category"), expense);
+        $("#paymentAnalysis").innerHTML = summaryList(groupSum(expenses, "payment"), expense);
+      }
+      function summaryList(map, total) {
+        const rows = Object.entries(map).sort((a, b) => b[1] - a[1]);
+        if (!rows.length) return `<div class="empty">沒有支出資料</div>`;
+        return rows.map(([label, value]) => {
+          const pct = total ? Math.round(value / total * 100) : 0;
+          return `<div class="record"><div><strong>${label}</strong><small>${pct}%</small></div><strong>${money(value)}</strong></div>`;
+        }).join("");
+      }
+      function renderSettings() {
+        $("#apiKey").value = localStorage.getItem(KEY_STORAGE) || "";
+        const data = state.data || emptyData();
+        $("#dataStatus").innerHTML = [
+          ["交易", `${(data.transactions || []).length} 筆`],
+          ["分類", `${(data.categories || []).length || seedCategories.expense.length + seedCategories.income.length} 個`],
+          ["付款方式", `${(data.payments || []).length || seedPayments.length} 個`],
+          ["目前月份", state.month]
+        ].map(([label, value]) => `<div class="record"><strong>${label}</strong><strong>${value}</strong></div>`).join("");
+      }
+      function recordHtml(row) {
+        const sign = row.type === "income" ? "+" : "-";
+        const cls = row.type === "income" ? "income-text" : "danger-text";
+        const title = [labelScope(row.scope), row.category, row.merchant].filter(Boolean).join(" · ");
+        const meta = [row.date.slice(5).replace("-", "/"), row.currency !== "TWD" ? `${row.currency} ${row.originalAmount.toLocaleString("zh-TW")}` : "", row.payment, row.note].filter(Boolean).join(" · ");
+        const actions = row.id ? `<div class="record-actions"><button class="mini" type="button" data-edit-id="${row.id}">編輯</button></div>` : "";
+        return `<div class="record"><div><strong>${title || "未命名"}</strong><small>${meta}</small></div><div class="record-side"><strong class="${cls}">${sign}${money(row.amount)}</strong>${actions}</div></div>`;
+      }
+
+      function currentKey() {
+        return localStorage.getItem(KEY_STORAGE) || $("#apiKey").value.trim();
+      }
+      function transactionById(id) {
+        return (state.data.transactions || []).find((row) => row.id === id);
+      }
+      function renderEditOptions(row) {
+        const type = $("#editType").value || row.type || "expense";
+        const categories = availableCategories(type);
+        const categoryValue = row.category || categories[0];
+        $("#editCurrency").innerHTML = currencies.map((item) => `<option value="${item}" ${item === (row.currency || "TWD") ? "selected" : ""}>${item}</option>`).join("");
+        $("#editCategory").innerHTML = categories.map((item) => `<option value="${item}" ${item === categoryValue ? "selected" : ""}>${item}</option>`).join("");
+        $("#editPayment").innerHTML = availablePayments().map((item) => `<option value="${item.id}" ${item.id === (row.paymentId || row.payment) ? "selected" : ""}>${item.name}</option>`).join("");
+      }
+      function openEdit(id) {
+        const row = transactionById(id);
+        if (!row) return;
+        $("#editId").value = row.id;
+        $("#editType").value = row.type;
+        $("#editDate").value = row.date || todayIso();
+        $("#editAmount").value = row.originalAmount || row.amount || "";
+        $("#editScope").value = row.scope || "personal";
+        $("#editMerchant").value = row.merchant || "";
+        $("#editNote").value = row.note || "";
+        renderEditOptions(row);
+        $("#editCategory").value = row.category || categoryName(row.categoryId);
+        $("#editPayment").value = row.paymentId || paymentId(row.payment);
+        setStatus($("#editStatus"), "修改後會同步到 Google Sheets");
+        $("#editModal").classList.add("active");
+        $("#editModal").setAttribute("aria-hidden", "false");
+      }
+      function closeEdit() {
+        $("#editModal").classList.remove("active");
+        $("#editModal").setAttribute("aria-hidden", "true");
+      }
+      async function saveEdit(event) {
+        event.preventDefault();
+        const key = currentKey();
+        const id = $("#editId").value;
+        const amount = Number($("#editAmount").value || 0);
+        if (!key) { setStatus($("#editStatus"), "請先到設定儲存寫入密鑰", "error"); return; }
+        if (!id) { setStatus($("#editStatus"), "找不到這筆明細", "error"); return; }
+        if (!amount || amount <= 0) { setStatus($("#editStatus"), "請輸入金額", "error"); return; }
+        $("#saveEdit").disabled = true;
+        setStatus($("#editStatus"), "正在儲存修改...");
+        try {
+          const result = await jsonp({
+            action: "updateTransaction",
+            key,
+            id,
+            type: $("#editType").value,
+            scope: $("#editScope").value,
+            category: $("#editCategory").value,
+            merchant: $("#editMerchant").value.trim(),
+            amount,
+            currency: $("#editCurrency").value,
+            payment: $("#editPayment").value,
+            date: $("#editDate").value || todayIso(),
+            note: $("#editNote").value.trim()
+          });
+          if (!result || !result.ok) throw new Error((result && result.error) || "儲存失敗");
+          setStatus($("#editStatus"), "已儲存修改", "ok");
+          await syncData();
+          closeEdit();
+        } catch (error) {
+          setStatus($("#editStatus"), String(error.message || error), "error");
+        } finally {
+          $("#saveEdit").disabled = false;
+        }
+      }
+      async function deleteTransaction(id = $("#editId").value) {
+        const key = currentKey();
+        if (!key) { setStatus($("#editStatus"), "請先到設定儲存寫入密鑰", "error"); return; }
+        if (!id) return;
+        if (!confirm("確定刪除這筆明細？")) return;
+        setStatus($("#editStatus"), "正在刪除...");
+        try {
+          const result = await jsonp({ action: "deleteTransaction", key, id });
+          if (!result || !result.ok) throw new Error((result && result.error) || "刪除失敗");
+          await syncData();
+          closeEdit();
+        } catch (error) {
+          setStatus($("#editStatus"), String(error.message || error), "error");
+        }
+      }
+
+      async function syncData() {
+        const key = localStorage.getItem(KEY_STORAGE);
+        if (!key) {
+          $("#syncLabel").textContent = "未設定密鑰";
+          return;
+        }
+        $("#syncLabel").textContent = "同步中...";
+        try {
+          const data = await jsonp({ action: "getAppState", key, month: state.month });
+          if (!data || !data.ok) throw new Error((data && data.error) || "同步失敗");
+          state.data = normalizeData(data);
+          saveCachedData(state.data);
+          $("#syncLabel").textContent = `已同步 ${new Date().toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })}`;
+          render();
+        } catch (error) {
+          $("#syncLabel").textContent = "使用快取";
+          setStatus($("#settingsStatus"), String(error.message || error), "error");
+        }
+      }
+      async function submitTransaction() {
+        const amount = Number($("#amount").value || 0);
+        const merchant = $("#merchant").value.trim();
+        const key = localStorage.getItem(KEY_STORAGE) || $("#apiKey").value.trim();
+        if (!key) { setStatus($("#status"), "請先到設定儲存寫入密鑰", "error"); state.view = "settings"; render(); return; }
+        if (!amount || amount <= 0) { setStatus($("#status"), "請輸入金額", "error"); return; }
+        if (!merchant) { setStatus($("#status"), "請輸入品名", "error"); return; }
+        localStorage.setItem(KEY_STORAGE, key);
+        localStorage.setItem("ledgerScope", state.scope);
+        localStorage.setItem("ledgerCategory", state.category);
+        localStorage.setItem("ledgerPayment", state.payment);
+        localStorage.setItem("ledgerCurrency", $("#currency").value);
+        $("#submit").disabled = true;
+        setStatus($("#status"), "正在寫入帳本...");
+        try {
+          const result = await jsonp({
+            action: "shortcutCreate",
+            key,
+            type: state.entryType,
+            scope: state.scope,
+            category: state.category,
+            merchant,
+            amount,
+            currency: $("#currency").value,
+            payment: state.payment,
+            date: $("#date").value || todayIso(),
+            note: $("#note").value.trim()
+          });
+          if (!result || !result.ok) throw new Error((result && result.error) || "寫入失敗");
+          setStatus($("#status"), `已新增：${merchant} ${money(amount)}`, "ok");
+          $("#amount").value = "";
+          $("#merchant").value = "";
+          $("#note").value = "";
+          await syncData();
+        } catch (error) {
+          setStatus($("#status"), String(error.message || error), "error");
+        } finally {
+          $("#submit").disabled = false;
+        }
+      }
+
+      async function saveRecurringItem() {
+        const key = currentKey();
+        const amount = Number($("#fixedAmount").value || 0);
+        const name = $("#fixedName").value.trim();
+        const startDate = $("#fixedStart").value || todayIso();
+        const dueDay = Number($("#fixedDueDay").value || startDate.slice(-2));
+        if (!key) { setStatus($("#fixedStatus"), "請先到設定儲存寫入密鑰", "error"); state.view = "settings"; render(); return; }
+        if (!name) { setStatus($("#fixedStatus"), "請輸入固定項目名稱", "error"); return; }
+        if (!amount || amount <= 0) { setStatus($("#fixedStatus"), "請輸入金額", "error"); return; }
+        if (dueDay < 1 || dueDay > 31) { setStatus($("#fixedStatus"), "扣款日請填 1 到 31", "error"); return; }
+        localStorage.setItem(KEY_STORAGE, key);
+        localStorage.setItem("ledgerFixedKind", state.fixedKind);
+        localStorage.setItem("ledgerScope", $("#fixedScope").value);
+        localStorage.setItem("ledgerPayment", $("#fixedPayment").value);
+        localStorage.setItem("ledgerCurrency", $("#fixedCurrency").value);
+        $("#saveRecurring").disabled = true;
+        setStatus($("#fixedStatus"), "正在儲存固定項目...");
+        try {
+          const type = fixedTransactionType();
+          const category = state.fixedKind === "investment" ? "投資" : $("#fixedCategory").value;
+          const result = await jsonp({
+            action: "saveRecurring",
+            key,
+            name,
+            type,
+            scope: $("#fixedScope").value,
+            category,
+            amount,
+            currency: $("#fixedCurrency").value,
+            payment: $("#fixedPayment").value,
+            frequency: $("#fixedFrequency").value,
+            interval_value: $("#fixedInterval").value || 1,
+            start_date: startDate,
+            next_due_date: startDate,
+            due_day: dueDay,
+            status: $("#fixedStatusMode").value,
+            note: $("#fixedNote").value.trim(),
+            auto_generate: $("#fixedStatusMode").value === "active"
+          });
+          if (!result || !result.ok) throw new Error((result && result.error) || "儲存固定項目失敗");
+          setStatus($("#fixedStatus"), "已儲存。到期後會由每日排程自動建立交易。", "ok");
+          $("#fixedName").value = "";
+          $("#fixedAmount").value = "";
+          $("#fixedNote").value = "";
+          await syncData();
+        } catch (error) {
+          setStatus($("#fixedStatus"), String(error.message || error), "error");
+        } finally {
+          $("#saveRecurring").disabled = false;
+        }
+      }
+
+      async function ensureRecurringTrigger() {
+        const key = currentKey();
+        if (!key) { setStatus($("#fixedStatus"), "請先到設定儲存寫入密鑰", "error"); state.view = "settings"; render(); return; }
+        $("#ensureTrigger").disabled = true;
+        setStatus($("#fixedStatus"), "正在確認每日自動扣款排程...");
+        try {
+          const result = await jsonp({ action: "ensureRecurringTrigger", key });
+          if (!result || !result.ok) throw new Error((result && result.error) || "啟用排程失敗");
+          setStatus($("#fixedStatus"), "每日自動扣款排程已啟用。", "ok");
+        } catch (error) {
+          setStatus($("#fixedStatus"), String(error.message || error), "error");
+        } finally {
+          $("#ensureTrigger").disabled = false;
+        }
+      }
+
+      document.addEventListener("click", (event) => {
+        const edit = event.target.closest("[data-edit-id]");
+        if (edit) { openEdit(edit.dataset.editId); return; }
+        const nav = event.target.closest("[data-view]");
+        if (nav) { state.view = nav.dataset.view; render(); return; }
+        const go = event.target.closest("[data-go]");
+        if (go) { state.view = go.dataset.go; if (go.dataset.entryType) state.entryType = go.dataset.entryType; render(); return; }
+        const type = event.target.closest("[data-type]");
+        if (type) { state.entryType = type.dataset.type; state.category = availableCategories(state.entryType)[0]; render(); return; }
+        const scope = event.target.closest("[data-scope]");
+        if (scope) { state.scope = scope.dataset.scope; render(); return; }
+        const category = event.target.closest("[data-category]");
+        if (category) { state.category = category.dataset.category; render(); return; }
+        const payment = event.target.closest("[data-payment]");
+        if (payment) { state.payment = payment.dataset.payment; render(); }
+        const fixedKind = event.target.closest("[data-fixed-kind]");
+        if (fixedKind) { state.fixedKind = fixedKind.dataset.fixedKind; localStorage.setItem("ledgerFixedKind", state.fixedKind); render(); return; }
+      });
+      $("#submit").addEventListener("click", submitTransaction);
+      $("#saveRecurring").addEventListener("click", saveRecurringItem);
+      $("#ensureTrigger").addEventListener("click", ensureRecurringTrigger);
+      $("#editForm").addEventListener("submit", saveEdit);
+      $("#closeEdit").addEventListener("click", closeEdit);
+      $("#cancelEdit").addEventListener("click", closeEdit);
+      $("#deleteEdit").addEventListener("click", () => deleteTransaction());
+      $("#editType").addEventListener("change", () => renderEditOptions({ type: $("#editType").value, currency: $("#editCurrency").value, paymentId: $("#editPayment").value, category: $("#editCategory").value }));
+      $("#saveKey").addEventListener("click", () => {
+        const key = $("#apiKey").value.trim();
+        if (!key) { setStatus($("#settingsStatus"), "密鑰不能空白", "error"); return; }
+        localStorage.setItem(KEY_STORAGE, key);
+        setStatus($("#settingsStatus"), "密鑰已存在這台手機", "ok");
+        syncData();
+      });
+      $("#syncNow").addEventListener("click", syncData);
+      $("#currency").addEventListener("change", () => { state.currency = $("#currency").value; localStorage.setItem("ledgerCurrency", state.currency); });
+      $("#monthFilter").addEventListener("change", () => { state.month = $("#monthFilter").value || monthIso(); syncData(); render(); });
+      $("#analysisMonth").addEventListener("change", () => { state.month = $("#analysisMonth").value || monthIso(); syncData(); render(); });
+      $("#scopeFilter").addEventListener("change", () => { state.scopeFilter = $("#scopeFilter").value; render(); });
+      $("#analysisScope").addEventListener("change", () => { state.scopeFilter = $("#analysisScope").value; render(); });
+      window.addEventListener("pointermove", (event) => {
+        const x = Math.round((event.clientX / Math.max(window.innerWidth, 1)) * 100);
+        const y = Math.round((event.clientY / Math.max(window.innerHeight, 1)) * 100);
+        document.documentElement.style.setProperty("--mx", `${x}%`);
+        document.documentElement.style.setProperty("--my", `${y}%`);
+      }, { passive: true });
+
+      function init() {
+        const url = new URL(location.href);
+        const key = url.searchParams.get("key");
+        if (key) {
+          localStorage.setItem(KEY_STORAGE, key);
+          url.searchParams.delete("key");
+          history.replaceState(null, "", url.toString());
+        }
+        state.data = normalizeData(state.data);
+        $("#date").value = todayIso();
+        $("#fixedStart").value = todayIso();
+        $("#fixedDueDay").value = String(new Date().getDate());
+        $("#monthFilter").value = state.month;
+        $("#analysisMonth").value = state.month;
+        render();
+        syncData();
+      }
+      init();
+    </script>
+  </body>
+</html>
