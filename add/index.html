@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#f4f7f6" />
+    <meta name="theme-color" content="#eef3f1" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="手機記帳" />
@@ -20,21 +20,20 @@
         --primary: #2f6f7e;
         --income: #23886f;
         --danger: #b64a52;
-        --surface: rgba(255, 255, 255, 0.92);
+        --warn: #b47a22;
+        --surface: rgba(255, 255, 255, 0.94);
         --soft: #e8efed;
         --border: rgba(22, 38, 38, 0.13);
         --shadow: 0 18px 44px rgba(34, 54, 54, 0.12);
       }
 
       * { box-sizing: border-box; }
-
       html, body { min-height: 100%; }
-
       body {
         margin: 0;
         min-height: 100vh;
         min-height: 100dvh;
-        padding: max(18px, env(safe-area-inset-top)) 14px max(92px, env(safe-area-inset-bottom));
+        padding: max(18px, env(safe-area-inset-top)) 14px calc(92px + env(safe-area-inset-bottom));
         background:
           linear-gradient(180deg, rgba(196, 211, 207, 0.75), transparent 190px),
           var(--bg);
@@ -42,57 +41,16 @@
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
       }
 
-      main {
-        width: min(100%, 520px);
-        margin: 0 auto;
-      }
+      main { width: min(100%, 560px); margin: 0 auto; }
+      header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 6px 4px 14px; }
+      h1 { margin: 0; font-size: 32px; line-height: 1.05; letter-spacing: 0; }
+      h2 { margin: 0 0 12px; font-size: 20px; letter-spacing: 0; }
+      h3 { margin: 0; font-size: 17px; letter-spacing: 0; }
+      .eyebrow { display: block; margin-bottom: 5px; color: var(--primary); font-size: 13px; font-weight: 800; }
+      .sync { color: var(--muted); font-size: 13px; font-weight: 800; text-align: right; }
 
-      header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 6px 4px 14px;
-      }
-
-      h1 {
-        margin: 0;
-        font-size: 32px;
-        line-height: 1.05;
-        letter-spacing: 0;
-      }
-
-      .eyebrow {
-        display: block;
-        margin-bottom: 5px;
-        color: var(--primary);
-        font-size: 13px;
-        font-weight: 800;
-      }
-
-      .icon {
-        width: 54px;
-        height: 54px;
-        border-radius: 14px;
-        box-shadow: var(--shadow);
-      }
-
-      .open-full {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 46px;
-        padding: 0 14px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.82);
-        color: var(--primary);
-        font-size: 14px;
-        font-weight: 800;
-        text-decoration: none;
-        white-space: nowrap;
-      }
-
+      .view { display: none; }
+      .view.active { display: block; }
       .card {
         margin-top: 12px;
         padding: 16px;
@@ -102,6 +60,50 @@
         box-shadow: var(--shadow);
       }
 
+      .hero-amount { margin-top: 8px; font-size: 52px; line-height: 1; font-weight: 850; letter-spacing: 0; }
+      .muted { color: var(--muted); }
+      .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .split, .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .stats.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .stat {
+        padding: 13px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+      }
+      .stat small, .record small { display: block; margin-top: 5px; color: var(--muted); font-size: 13px; line-height: 1.35; }
+      .stat strong { display: block; margin-top: 6px; font-size: 22px; }
+
+      .progress { height: 14px; margin: 13px 0 4px; border-radius: 999px; background: var(--soft); overflow: hidden; }
+      .progress span { display: block; height: 100%; width: 0; border-radius: 999px; background: var(--primary); }
+      .progress.warn span { background: var(--warn); }
+      .progress.danger span { background: var(--danger); }
+
+      button, input, select, textarea {
+        font: inherit;
+        border-radius: 8px;
+      }
+      button {
+        min-height: 48px;
+        border: 1px solid transparent;
+        background: #fff;
+        color: var(--ink);
+        font-weight: 800;
+      }
+      input, select, textarea {
+        width: 100%;
+        min-height: 52px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--ink);
+        font-size: 17px;
+        padding: 0 13px;
+      }
+      textarea { min-height: 84px; padding-top: 12px; resize: vertical; }
+      input[type="date"], input[type="month"] { text-align: center; }
+      label { display: grid; gap: 7px; margin-top: 13px; color: var(--muted); font-size: 14px; font-weight: 800; }
+      .amount { min-height: 76px; font-size: 38px; font-weight: 850; }
+
       .segmented {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -110,88 +112,15 @@
         border-radius: 8px;
         background: var(--soft);
       }
-
-      button {
-        min-height: 48px;
-        border: 1px solid transparent;
-        border-radius: 8px;
-        background: #fff;
-        color: var(--ink);
-        font: inherit;
-        font-weight: 800;
-      }
-
-      .segmented button {
-        background: transparent;
-        color: #536160;
-      }
-
-      .segmented button.active {
-        background: #fff;
-        color: var(--ink);
-        box-shadow: 0 2px 8px rgba(31, 48, 48, 0.08);
-      }
-
-      .segmented button[data-type="income"].active { color: var(--income); }
-
-      label {
-        display: grid;
-        gap: 7px;
-        margin-top: 13px;
-        color: var(--muted);
-        font-size: 14px;
-        font-weight: 700;
-      }
-
-      input, select {
-        width: 100%;
-        min-height: 52px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background: #fff;
-        color: var(--ink);
-        font: inherit;
-        font-size: 18px;
-        padding: 0 13px;
-      }
-
-      input[type="date"] { text-align: center; }
-
-      .amount {
-        min-height: 76px;
-        font-size: 38px;
-        font-weight: 800;
-      }
-
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 8px;
-        margin-top: 8px;
-      }
-
+      .segmented.three { grid-template-columns: repeat(3, 1fr); }
+      .segmented button { background: transparent; color: #536160; }
+      .segmented button.active { background: #fff; color: var(--ink); box-shadow: 0 2px 8px rgba(31, 48, 48, 0.08); }
+      .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
       .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .chip { min-width: 0; padding: 0 7px; border-color: var(--border); overflow-wrap: anywhere; }
+      .chip.active { border-color: var(--primary); background: #e6f1f1; color: #12383f; }
 
-      .chip {
-        min-width: 0;
-        padding: 0 7px;
-        border-color: var(--border);
-        overflow-wrap: anywhere;
-      }
-
-      .chip.active {
-        border-color: var(--primary);
-        background: #e6f1f1;
-        color: #12383f;
-      }
-
-      .split {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-      }
-
-      .submit {
+      .primary {
         width: 100%;
         margin-top: 16px;
         min-height: 56px;
@@ -199,9 +128,10 @@
         color: #fff;
         font-size: 18px;
       }
-
-      .submit.income { background: var(--income); }
-      .submit:disabled { opacity: 0.55; }
+      .primary.income { background: var(--income); }
+      .secondary { border-color: var(--border); color: var(--primary); }
+      .danger-text { color: var(--danger); }
+      .income-text { color: var(--income); }
 
       .status {
         margin-top: 12px;
@@ -212,78 +142,56 @@
         color: var(--muted);
         font-weight: 800;
       }
+      .status.ok { border-color: rgba(35, 136, 111, 0.28); color: #16745d; background: #f0faf6; }
+      .status.error { border-color: rgba(182, 74, 82, 0.3); color: var(--danger); background: #fff4f4; }
 
-      .status.ok {
-        border-color: rgba(35, 136, 111, 0.28);
-        color: #16745d;
-        background: #f0faf6;
-      }
-
-      .status.error {
-        border-color: rgba(182, 74, 82, 0.3);
-        color: var(--danger);
-        background: #fff4f4;
-      }
-
-      details {
-        margin-top: 12px;
+      .record {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: center;
+        padding: 14px;
         border: 1px solid var(--border);
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.72);
+        background: #fff;
+      }
+      .record + .record { margin-top: 9px; }
+      .record strong { overflow-wrap: anywhere; }
+      .list { display: grid; gap: 9px; }
+      .empty { padding: 18px; border: 1px dashed var(--border); border-radius: 8px; color: var(--muted); text-align: center; font-weight: 800; }
+
+      .filters {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        margin: 0 -14px;
+        padding: 8px 14px;
+        background: rgba(238, 243, 241, 0.92);
+        backdrop-filter: blur(14px);
       }
 
-      summary {
-        min-height: 48px;
-        padding: 13px 14px;
-        color: var(--muted);
-        font-weight: 800;
-      }
-
-      details .inner { padding: 0 14px 14px; }
-
-      .small-button {
-        width: 100%;
-        margin-top: 10px;
-        border-color: var(--border);
-        color: var(--primary);
-      }
-
-      .bottom-nav {
+      .nav {
         position: fixed;
         left: 0;
         right: 0;
         bottom: 0;
-        z-index: 5;
+        z-index: 10;
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        padding: 10px 14px max(10px, env(safe-area-inset-bottom));
-        background: rgba(246, 249, 248, 0.92);
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+        padding: 10px 10px max(10px, env(safe-area-inset-bottom));
         border-top: 1px solid var(--border);
+        background: rgba(246, 249, 248, 0.94);
         backdrop-filter: blur(18px);
       }
+      .nav button { min-height: 52px; color: var(--muted); }
+      .nav button.active { background: #fff; color: var(--primary); box-shadow: 0 8px 24px rgba(34, 54, 54, 0.12); }
 
-      .bottom-nav a,
-      .bottom-nav button {
-        min-height: 52px;
-        border-radius: 8px;
-        text-decoration: none;
-      }
-
-      .bottom-nav a {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid var(--border);
-        background: #fff;
-        color: var(--primary);
-        font-weight: 800;
-      }
-
-      @media (max-width: 360px) {
-        .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      @media (max-width: 380px) {
         h1 { font-size: 29px; }
-        .amount { font-size: 34px; }
+        .hero-amount { font-size: 44px; }
+        .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .stats.three { grid-template-columns: 1fr; }
       }
     </style>
   </head>
@@ -294,107 +202,141 @@
           <span class="eyebrow">共用帳本</span>
           <h1>手機記帳</h1>
         </div>
-        <a class="open-full" href="https://script.google.com/macros/s/AKfycbzTTIWcLmhzvJFV0oP0oMrkr_94Y0te7FXPbAiB54XPRs8_Bi5DLk3p_90dzXYSWjye/exec">查看帳本</a>
+        <div class="sync" id="syncLabel">尚未同步</div>
       </header>
 
-      <section class="card">
-        <div class="segmented" aria-label="收入支出">
-          <button type="button" class="active" data-type="expense">支出</button>
-          <button type="button" data-type="income">收入</button>
-        </div>
-
-        <label>
-          金額
-          <input id="amount" class="amount" type="number" inputmode="decimal" min="0" step="1" placeholder="0" autocomplete="off" />
-        </label>
-
+      <section class="view active" id="homeView">
+        <div class="card" id="budgetCard"></div>
+        <div class="stats three" id="summaryCards"></div>
         <div class="split">
-          <label>
-            日期
-            <input id="date" type="date" />
-          </label>
-          <label>
-            幣別
-            <select id="currency">
-              <option>TWD</option>
-              <option>JPY</option>
-              <option>USD</option>
-              <option>EUR</option>
-              <option>HKD</option>
-              <option>KRW</option>
-              <option>CNY</option>
-            </select>
-          </label>
+          <button class="primary" type="button" data-go="entry" data-entry-type="expense">+ 記支出</button>
+          <button class="primary income" type="button" data-go="entry" data-entry-type="income">+ 記收入</button>
         </div>
-
-        <label>
-          帳本
-          <div class="grid two" id="scopeGrid"></div>
-        </label>
-
-        <label>
-          分類
-          <div class="grid" id="categoryGrid"></div>
-        </label>
-
-        <label>
-          品名
-          <input id="merchant" type="text" placeholder="例如 午餐、Apple 雲端、藥局" autocomplete="off" />
-        </label>
-
-        <label>
-          付款方式
-          <div class="grid two" id="paymentGrid"></div>
-        </label>
-
-        <button id="submit" class="submit" type="button">新增支出</button>
-        <div id="status" class="status">尚未送出</div>
+        <div class="card">
+          <div class="row"><h2>即將扣款</h2><span class="muted">7 天內</span></div>
+          <div id="upcomingList" class="list"></div>
+        </div>
+        <div class="card">
+          <div class="row"><h2>最近紀錄</h2><span class="muted" id="recentCount"></span></div>
+          <div id="recentList" class="list"></div>
+        </div>
       </section>
 
-      <details>
-        <summary>設定</summary>
-        <div class="inner">
-          <label>
-            寫入密鑰
-            <input id="apiKey" type="password" autocomplete="off" placeholder="第一次使用才需要填" />
-          </label>
-          <button id="saveKey" class="small-button" type="button">儲存密鑰</button>
+      <section class="view" id="entryView">
+        <div class="card">
+          <div class="segmented" aria-label="收入支出">
+            <button type="button" class="active" data-type="expense">支出</button>
+            <button type="button" data-type="income">收入</button>
+          </div>
+          <label>金額<input id="amount" class="amount" type="number" inputmode="decimal" min="0" step="1" placeholder="0" autocomplete="off" /></label>
+          <div class="split">
+            <label>日期<input id="date" type="date" /></label>
+            <label>幣別<select id="currency"></select></label>
+          </div>
+          <label>帳本<div class="grid two" id="scopeGrid"></div></label>
+          <label>分類<div class="grid" id="categoryGrid"></div></label>
+          <label>品名<input id="merchant" type="text" placeholder="例如 午餐、Apple 雲端、藥局" autocomplete="off" /></label>
+          <label>付款方式<div class="grid two" id="paymentGrid"></div></label>
+          <label>備註<textarea id="note" placeholder="可不填"></textarea></label>
+          <button id="submit" class="primary" type="button">新增支出</button>
+          <div id="status" class="status">尚未送出</div>
         </div>
-      </details>
+      </section>
 
-      <nav class="bottom-nav" aria-label="主要操作">
-        <button id="navSubmit" class="submit" type="button">新增支出</button>
-        <a href="https://script.google.com/macros/s/AKfycbzTTIWcLmhzvJFV0oP0oMrkr_94Y0te7FXPbAiB54XPRs8_Bi5DLk3p_90dzXYSWjye/exec">完整帳本</a>
-      </nav>
+      <section class="view" id="recordsView">
+        <div class="filters">
+          <div class="split">
+            <input id="monthFilter" type="month" />
+            <select id="scopeFilter">
+              <option value="all">全部帳本</option>
+              <option value="personal">自己花費</option>
+              <option value="home">家裡開銷</option>
+            </select>
+          </div>
+        </div>
+        <div class="card">
+          <div class="row"><h2>當月明細</h2><span class="muted" id="recordCount"></span></div>
+          <div id="recordsList" class="list"></div>
+        </div>
+      </section>
+
+      <section class="view" id="analysisView">
+        <div class="filters">
+          <div class="split">
+            <input id="analysisMonth" type="month" />
+            <select id="analysisScope">
+              <option value="all">全部帳本</option>
+              <option value="personal">自己花費</option>
+              <option value="home">家裡開銷</option>
+            </select>
+          </div>
+        </div>
+        <div class="card">
+          <h2>收支分析</h2>
+          <div class="stats three" id="analysisSummary"></div>
+        </div>
+        <div class="card">
+          <h2>分類支出</h2>
+          <div id="categoryAnalysis" class="list"></div>
+        </div>
+        <div class="card">
+          <h2>付款方式</h2>
+          <div id="paymentAnalysis" class="list"></div>
+        </div>
+      </section>
+
+      <section class="view" id="settingsView">
+        <div class="card">
+          <h2>同步設定</h2>
+          <label>寫入密鑰<input id="apiKey" type="password" autocomplete="off" placeholder="第一次使用才需要填" /></label>
+          <button id="saveKey" class="primary" type="button">儲存密鑰</button>
+          <button id="syncNow" class="primary secondary" type="button">立即同步</button>
+          <div id="settingsStatus" class="status">資料會先顯示手機快取，再背景同步 Google Sheets</div>
+        </div>
+        <div class="card">
+          <h2>資料狀態</h2>
+          <div id="dataStatus" class="list"></div>
+        </div>
+      </section>
     </main>
+
+    <nav class="nav" aria-label="主選單">
+      <button class="active" type="button" data-view="home">首頁</button>
+      <button type="button" data-view="entry">記帳</button>
+      <button type="button" data-view="records">明細</button>
+      <button type="button" data-view="analysis">分析</button>
+      <button type="button" data-view="settings">設定</button>
+    </nav>
 
     <script>
       const API_URL = "https://script.google.com/macros/s/AKfycbzTTIWcLmhzvJFV0oP0oMrkr_94Y0te7FXPbAiB54XPRs8_Bi5DLk3p_90dzXYSWjye/exec";
       const KEY_STORAGE = "ledgerShortcutApiKey";
-
-      const expenseCategories = ["餐飲", "交通", "購物", "生活", "娛樂", "醫療", "旅行", "房租", "保險", "訂閱", "分期付款", "投資", "其他支出"];
-      const incomeCategories = ["薪資", "獎金", "投資收入", "利息", "退款", "兼職", "禮金", "其他收入"];
-      const payments = [
-        ["dbs", "星展卡"],
-        ["ctbc", "中信卡"],
-        ["cathay", "國泰卡"],
-        ["jko", "吉鶴卡"],
-        ["cash", "現金"],
-        ["unknown", "未分類付款"]
+      const DATA_STORAGE = "ledgerAppStateV1";
+      const currencies = ["TWD", "JPY", "USD", "EUR", "HKD", "KRW", "CNY"];
+      const seedCategories = {
+        expense: ["餐飲", "交通", "購物", "生活", "娛樂", "醫療", "旅行", "房租", "保險", "訂閱", "分期付款", "投資", "其他支出"],
+        income: ["薪資", "獎金", "投資收入", "利息", "退款", "兼職", "禮金", "其他收入"]
+      };
+      const seedPayments = [
+        { id: "dbs", name: "星展卡" },
+        { id: "ctbc", name: "中信卡" },
+        { id: "cathay", name: "國泰卡" },
+        { id: "jko", name: "吉鶴卡" },
+        { id: "cash", name: "現金" },
+        { id: "unknown", name: "未分類付款" }
       ];
-      const scopes = [
-        ["personal", "自己花費"],
-        ["home", "家裡開銷"]
-      ];
-
+      const scopes = [["personal", "自己花費"], ["home", "家裡開銷"]];
       const state = {
-        type: "expense",
+        view: "home",
+        entryType: "expense",
         scope: localStorage.getItem("ledgerScope") || "personal",
         category: localStorage.getItem("ledgerCategory") || "餐飲",
         payment: localStorage.getItem("ledgerPayment") || "dbs",
-        currency: localStorage.getItem("ledgerCurrency") || "TWD"
+        currency: localStorage.getItem("ledgerCurrency") || "TWD",
+        month: monthIso(),
+        scopeFilter: "all",
+        data: loadCachedData()
       };
-
       const $ = (selector) => document.querySelector(selector);
 
       function todayIso() {
@@ -402,177 +344,332 @@
         date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
         return date.toISOString().slice(0, 10);
       }
-
-      function setStatus(text, type = "") {
-        const node = $("#status");
-        node.textContent = text;
-        node.className = `status ${type}`.trim();
+      function monthIso() { return todayIso().slice(0, 7); }
+      function money(value) { return "$" + Math.round(Number(value || 0)).toLocaleString("zh-TW"); }
+      function labelScope(value) { return value === "home" ? "家裡開銷" : value === "personal" ? "自己花費" : "未分類帳本"; }
+      function setStatus(node, text, type = "") { node.textContent = text; node.className = `status ${type}`.trim(); }
+      function emptyData() { return { ok: true, transactions: [], categories: [], payments: seedPayments, budgets: [], recurring: [], installmentPlans: [], trips: [] }; }
+      function loadCachedData() {
+        try { return JSON.parse(localStorage.getItem(DATA_STORAGE)) || emptyData(); } catch (_) { return emptyData(); }
       }
-
-      function renderButtons(id, items, selected, key) {
-        $(id).innerHTML = items.map(([value, label]) => (
-          `<button class="chip ${value === selected ? "active" : ""}" type="button" data-${key}="${value}">${label}</button>`
-        )).join("");
-      }
-
-      function render() {
-        document.querySelectorAll("[data-type]").forEach((button) => {
-          button.classList.toggle("active", button.dataset.type === state.type);
-        });
-        const categories = state.type === "income" ? incomeCategories : expenseCategories;
-        if (!categories.includes(state.category)) state.category = categories[0];
-        renderButtons("#scopeGrid", scopes, state.scope, "scope");
-        renderButtons("#categoryGrid", categories.map((item) => [item, item]), state.category, "category");
-        renderButtons("#paymentGrid", payments, state.payment, "payment");
-        $("#submit").classList.toggle("income", state.type === "income");
-        $("#submit").textContent = state.type === "income" ? "新增收入" : "新增支出";
-        $("#navSubmit").classList.toggle("income", state.type === "income");
-        $("#navSubmit").textContent = state.type === "income" ? "新增收入" : "新增支出";
-      }
-
-      function storeQueryKey() {
-        const url = new URL(location.href);
-        const key = url.searchParams.get("key");
-        if (!key) return;
-        localStorage.setItem(KEY_STORAGE, key);
-        $("#apiKey").value = key;
-        url.searchParams.delete("key");
-        history.replaceState(null, "", url.toString());
-      }
+      function saveCachedData(data) { localStorage.setItem(DATA_STORAGE, JSON.stringify(data)); }
 
       function jsonp(params) {
         return new Promise((resolve, reject) => {
-          const callback = `ledgerCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+          const callback = `ledgerCb_${Date.now()}_${Math.random().toString(36).slice(2)}`;
           const url = new URL(API_URL);
-          Object.entries({ ...params, callback }).forEach(([key, value]) => {
-            url.searchParams.set(key, value == null ? "" : String(value));
-          });
+          Object.entries({ ...params, callback }).forEach(([key, value]) => url.searchParams.set(key, value == null ? "" : String(value)));
           const script = document.createElement("script");
-          const timer = setTimeout(() => {
-            cleanup();
-            reject(new Error("連線逾時"));
-          }, 20000);
-
-          function cleanup() {
-            clearTimeout(timer);
-            delete window[callback];
-            script.remove();
-          }
-
-          window[callback] = (payload) => {
-            cleanup();
-            resolve(payload);
-          };
-          script.onerror = () => {
-            cleanup();
-            reject(new Error("送出失敗"));
-          };
+          const timer = setTimeout(() => { cleanup(); reject(new Error("連線逾時")); }, 25000);
+          function cleanup() { clearTimeout(timer); delete window[callback]; script.remove(); }
+          window[callback] = (payload) => { cleanup(); resolve(payload); };
+          script.onerror = () => { cleanup(); reject(new Error("送出失敗")); };
           script.src = url.toString();
           document.body.appendChild(script);
         });
       }
 
-      async function submit() {
+      function normalizeData(data) {
+        const copy = data || emptyData();
+        copy.transactions = (copy.transactions || []).map((row) => ({
+          id: row.transaction_id || row.id || "",
+          type: row.transaction_type || "expense",
+          scope: row.account_scope || "personal",
+          date: String(row.date || "").slice(0, 10),
+          amount: Number(row.amount_twd || row.original_amount || 0),
+          originalAmount: Number(row.original_amount || row.amount_twd || 0),
+          currency: row.currency || "TWD",
+          category: categoryName(row.category_id),
+          payment: paymentName(row.payment_id),
+          merchant: row.merchant || "",
+          note: row.note || ""
+        })).filter((row) => row.date);
+        copy.categories = copy.categories || [];
+        copy.payments = copy.payments || [];
+        copy.budgets = copy.budgets || [];
+        return copy;
+      }
+
+      function categoryName(value) {
+        const text = String(value || "").trim();
+        if (!text) return "其他支出";
+        const found = (state.data.categories || []).find((row) => row.category_id === text || row.name === text);
+        return found ? found.name : text;
+      }
+      function paymentName(value) {
+        const text = String(value || "").trim();
+        const found = (state.data.payments || []).find((row) => row.payment_id === text || row.id === text || row.card_name === text);
+        if (found) return found.card_name || found.name || text;
+        return seedPayments.find((row) => row.id === text)?.name || text || "未分類付款";
+      }
+      function paymentId(value) {
+        const target = String(value || "").trim();
+        const found = (state.data.payments || []).find((row) => (row.card_name || row.name) === target || row.payment_id === target || row.id === target);
+        return found ? (found.payment_id || found.id) : (seedPayments.find((row) => row.name === target)?.id || target);
+      }
+      function availableCategories(type) {
+        const fromSheet = (state.data.categories || [])
+          .filter((row) => (row.transaction_type || type) === type && row.active !== false && row.active !== "FALSE")
+          .map((row) => row.name || row.category_id)
+          .filter(Boolean);
+        return [...new Set([...(fromSheet.length ? fromSheet : seedCategories[type]), ...seedCategories[type]])];
+      }
+      function availablePayments() {
+        const fromSheet = (state.data.payments || [])
+          .filter((row) => row.active !== false && row.active !== "FALSE")
+          .map((row) => ({ id: row.payment_id || row.id || row.card_name, name: row.card_name || row.name || row.payment_id }))
+          .filter((row) => row.id && row.name);
+        return fromSheet.length ? fromSheet : seedPayments;
+      }
+      function monthTransactions(month = state.month, scope = "all") {
+        return (state.data.transactions || [])
+          .filter((row) => row.date.slice(0, 7) === month)
+          .filter((row) => scope === "all" || row.scope === scope)
+          .sort((a, b) => b.date.localeCompare(a.date));
+      }
+      function sum(rows, type) {
+        return rows.filter((row) => !type || row.type === type).reduce((total, row) => total + Number(row.amount || 0), 0);
+      }
+      function groupSum(rows, key) {
+        return rows.reduce((map, row) => {
+          const label = row[key] || "未分類";
+          map[label] = (map[label] || 0) + Number(row.amount || 0);
+          return map;
+        }, {});
+      }
+      function monthlyBudget() {
+        const [year, month] = state.month.split("-").map(Number);
+        const rows = state.data.budgets || [];
+        const monthly = rows.find((row) => row.budget_type === "monthly_total" && Number(row.year) === year && Number(row.month) === month && row.active !== false);
+        const def = rows.find((row) => row.budget_type === "default_monthly" && row.active !== false);
+        return Number((monthly || def || {}).amount || 30000);
+      }
+
+      function render() {
+        renderNav();
+        renderEntry();
+        renderHome();
+        renderRecords();
+        renderAnalysis();
+        renderSettings();
+      }
+      function renderNav() {
+        document.querySelectorAll(".view").forEach((node) => node.classList.toggle("active", node.id === `${state.view}View`));
+        document.querySelectorAll(".nav [data-view]").forEach((button) => button.classList.toggle("active", button.dataset.view === state.view));
+      }
+      function renderEntry() {
+        document.querySelectorAll("[data-type]").forEach((button) => button.classList.toggle("active", button.dataset.type === state.entryType));
+        const categories = availableCategories(state.entryType);
+        if (!categories.includes(state.category)) state.category = categories[0];
+        $("#currency").innerHTML = currencies.map((item) => `<option ${item === state.currency ? "selected" : ""}>${item}</option>`).join("");
+        $("#scopeGrid").innerHTML = scopes.map(([value, label]) => `<button class="chip ${value === state.scope ? "active" : ""}" type="button" data-scope="${value}">${label}</button>`).join("");
+        $("#categoryGrid").innerHTML = categories.map((item) => `<button class="chip ${item === state.category ? "active" : ""}" type="button" data-category="${item}">${item}</button>`).join("");
+        $("#paymentGrid").innerHTML = availablePayments().map((item) => `<button class="chip ${item.id === state.payment ? "active" : ""}" type="button" data-payment="${item.id}">${item.name}</button>`).join("");
+        $("#submit").classList.toggle("income", state.entryType === "income");
+        $("#submit").textContent = state.entryType === "income" ? "新增收入" : "新增支出";
+      }
+      function renderHome() {
+        const rows = monthTransactions(state.month);
+        const income = sum(rows, "income");
+        const expense = sum(rows, "expense");
+        const budget = monthlyBudget();
+        const remaining = budget - expense;
+        const ratio = budget ? Math.round(expense / budget * 100) : 0;
+        const level = ratio >= 100 ? "danger" : ratio >= 70 ? "warn" : "";
+        $("#budgetCard").innerHTML = `
+          <div class="row"><div><span class="muted">本月預算</span><h2>${money(budget)}</h2></div><strong>${ratio >= 100 ? "已超支" : ratio >= 70 ? "接近預算" : "正常"}</strong></div>
+          <div class="hero-amount">${money(remaining)}</div>
+          <div class="muted">剩餘可用</div>
+          <div class="progress ${level}"><span style="width:${Math.min(ratio, 100)}%"></span></div>
+          <div class="stats three">
+            <div class="stat"><small>已花費</small><strong>${money(expense)}</strong></div>
+            <div class="stat"><small>使用比例</small><strong>${ratio}%</strong></div>
+            <div class="stat"><small>本月結餘</small><strong>${money(income - expense)}</strong></div>
+          </div>`;
+        $("#summaryCards").innerHTML = [
+          ["本月收入", income, "income-text"],
+          ["本月支出", expense, "danger-text"],
+          ["本月結餘", income - expense, ""]
+        ].map(([label, value, cls]) => `<div class="stat"><small>${label}</small><strong class="${cls}">${money(value)}</strong></div>`).join("");
+        const recent = rows.slice(0, 8);
+        $("#recentCount").textContent = `${rows.length} 筆`;
+        $("#recentList").innerHTML = recent.length ? recent.map(recordHtml).join("") : `<div class="empty">這個月還沒有紀錄</div>`;
+        const upcoming = upcomingItems().slice(0, 6);
+        $("#upcomingList").innerHTML = upcoming.length ? upcoming.map((item) => `<div class="record"><div><strong>${item.name}</strong><small>${item.sub}</small></div><strong>${item.date}</strong></div>`).join("") : `<div class="empty">7 天內沒有扣款</div>`;
+      }
+      function upcomingItems() {
+        const today = new Date(todayIso() + "T00:00:00");
+        const max = new Date(today);
+        max.setDate(max.getDate() + 7);
+        const list = [];
+        (state.data.recurring || []).forEach((row) => {
+          const date = String(row.next_due_date || "").slice(0, 10);
+          if (within(date, today, max)) list.push({ date: date.slice(5).replace("-", "/"), name: row.name, sub: `${row.transaction_type === "income" ? "固定收入" : "固定支出"} ${money(row.amount)}` });
+        });
+        (state.data.installmentPlans || []).forEach((row) => {
+          const date = String(row.nextDueDate || row.next_due_date || row.start_date || "").slice(0, 10);
+          if (within(date, today, max)) list.push({ date: date.slice(5).replace("-", "/"), name: row.name, sub: `分期付款 ${money(row.installment_amount)}` });
+        });
+        return list.sort((a, b) => a.date.localeCompare(b.date));
+      }
+      function within(date, start, end) {
+        if (!date) return false;
+        const value = new Date(date + "T00:00:00");
+        return value >= start && value <= end;
+      }
+      function renderRecords() {
+        $("#monthFilter").value = state.month;
+        $("#scopeFilter").value = state.scopeFilter;
+        const rows = monthTransactions(state.month, state.scopeFilter);
+        $("#recordCount").textContent = `${rows.length} 筆`;
+        $("#recordsList").innerHTML = rows.length ? rows.map(recordHtml).join("") : `<div class="empty">這個月份沒有資料</div>`;
+      }
+      function renderAnalysis() {
+        $("#analysisMonth").value = state.month;
+        $("#analysisScope").value = state.scopeFilter;
+        const rows = monthTransactions(state.month, state.scopeFilter);
+        const expenses = rows.filter((row) => row.type === "expense");
+        const income = sum(rows, "income");
+        const expense = sum(rows, "expense");
+        $("#analysisSummary").innerHTML = [
+          ["收入", income, "income-text"],
+          ["支出", expense, "danger-text"],
+          ["差額", income - expense, ""]
+        ].map(([label, value, cls]) => `<div class="stat"><small>${label}</small><strong class="${cls}">${money(value)}</strong></div>`).join("");
+        $("#categoryAnalysis").innerHTML = summaryList(groupSum(expenses, "category"), expense);
+        $("#paymentAnalysis").innerHTML = summaryList(groupSum(expenses, "payment"), expense);
+      }
+      function summaryList(map, total) {
+        const rows = Object.entries(map).sort((a, b) => b[1] - a[1]);
+        if (!rows.length) return `<div class="empty">沒有支出資料</div>`;
+        return rows.map(([label, value]) => {
+          const pct = total ? Math.round(value / total * 100) : 0;
+          return `<div class="record"><div><strong>${label}</strong><small>${pct}%</small></div><strong>${money(value)}</strong></div>`;
+        }).join("");
+      }
+      function renderSettings() {
+        $("#apiKey").value = localStorage.getItem(KEY_STORAGE) || "";
+        const data = state.data || emptyData();
+        $("#dataStatus").innerHTML = [
+          ["交易", `${(data.transactions || []).length} 筆`],
+          ["分類", `${(data.categories || []).length || seedCategories.expense.length + seedCategories.income.length} 個`],
+          ["付款方式", `${(data.payments || []).length || seedPayments.length} 個`],
+          ["目前月份", state.month]
+        ].map(([label, value]) => `<div class="record"><strong>${label}</strong><strong>${value}</strong></div>`).join("");
+      }
+      function recordHtml(row) {
+        const sign = row.type === "income" ? "+" : "-";
+        const cls = row.type === "income" ? "income-text" : "danger-text";
+        const title = [labelScope(row.scope), row.category, row.merchant].filter(Boolean).join(" · ");
+        const meta = [row.date.slice(5).replace("-", "/"), row.currency !== "TWD" ? `${row.currency} ${row.originalAmount.toLocaleString("zh-TW")}` : "", row.payment, row.note].filter(Boolean).join(" · ");
+        return `<div class="record"><div><strong>${title || "未命名"}</strong><small>${meta}</small></div><strong class="${cls}">${sign}${money(row.amount)}</strong></div>`;
+      }
+
+      async function syncData() {
+        const key = localStorage.getItem(KEY_STORAGE);
+        if (!key) {
+          $("#syncLabel").textContent = "未設定密鑰";
+          return;
+        }
+        $("#syncLabel").textContent = "同步中...";
+        try {
+          const data = await jsonp({ action: "getAppState", key, month: state.month });
+          if (!data || !data.ok) throw new Error((data && data.error) || "同步失敗");
+          state.data = normalizeData(data);
+          saveCachedData(state.data);
+          $("#syncLabel").textContent = `已同步 ${new Date().toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })}`;
+          render();
+        } catch (error) {
+          $("#syncLabel").textContent = "使用快取";
+          setStatus($("#settingsStatus"), String(error.message || error), "error");
+        }
+      }
+      async function submitTransaction() {
         const amount = Number($("#amount").value || 0);
         const merchant = $("#merchant").value.trim();
         const key = localStorage.getItem(KEY_STORAGE) || $("#apiKey").value.trim();
-        if (!key) {
-          setStatus("請先在設定儲存寫入密鑰", "error");
-          document.querySelector("details").open = true;
-          return;
-        }
-        if (!amount || amount <= 0) {
-          setStatus("請輸入金額", "error");
-          $("#amount").focus();
-          return;
-        }
-        if (!merchant) {
-          setStatus("請輸入品名", "error");
-          $("#merchant").focus();
-          return;
-        }
-
+        if (!key) { setStatus($("#status"), "請先到設定儲存寫入密鑰", "error"); state.view = "settings"; render(); return; }
+        if (!amount || amount <= 0) { setStatus($("#status"), "請輸入金額", "error"); return; }
+        if (!merchant) { setStatus($("#status"), "請輸入品名", "error"); return; }
         localStorage.setItem(KEY_STORAGE, key);
         localStorage.setItem("ledgerScope", state.scope);
         localStorage.setItem("ledgerCategory", state.category);
         localStorage.setItem("ledgerPayment", state.payment);
         localStorage.setItem("ledgerCurrency", $("#currency").value);
-
         $("#submit").disabled = true;
-        setStatus("正在寫入帳本...");
+        setStatus($("#status"), "正在寫入帳本...");
         try {
           const result = await jsonp({
             action: "shortcutCreate",
             key,
-            type: state.type,
+            type: state.entryType,
             scope: state.scope,
             category: state.category,
             merchant,
             amount,
             currency: $("#currency").value,
             payment: state.payment,
-            date: $("#date").value || todayIso()
+            date: $("#date").value || todayIso(),
+            note: $("#note").value.trim()
           });
           if (!result || !result.ok) throw new Error((result && result.error) || "寫入失敗");
-          setStatus(`已新增：${merchant} $${amount.toLocaleString("zh-TW")}`, "ok");
+          setStatus($("#status"), `已新增：${merchant} ${money(amount)}`, "ok");
           $("#amount").value = "";
           $("#merchant").value = "";
-          $("#amount").focus();
+          $("#note").value = "";
+          await syncData();
         } catch (error) {
-          setStatus(String(error.message || error), "error");
+          setStatus($("#status"), String(error.message || error), "error");
         } finally {
           $("#submit").disabled = false;
         }
       }
 
       document.addEventListener("click", (event) => {
+        const nav = event.target.closest("[data-view]");
+        if (nav) { state.view = nav.dataset.view; render(); return; }
+        const go = event.target.closest("[data-go]");
+        if (go) { state.view = go.dataset.go; if (go.dataset.entryType) state.entryType = go.dataset.entryType; render(); return; }
         const type = event.target.closest("[data-type]");
-        if (type) {
-          state.type = type.dataset.type;
-          state.category = state.type === "income" ? incomeCategories[0] : expenseCategories[0];
-          render();
-          return;
-        }
+        if (type) { state.entryType = type.dataset.type; state.category = availableCategories(state.entryType)[0]; render(); return; }
         const scope = event.target.closest("[data-scope]");
-        if (scope) {
-          state.scope = scope.dataset.scope;
-          render();
-          return;
-        }
+        if (scope) { state.scope = scope.dataset.scope; render(); return; }
         const category = event.target.closest("[data-category]");
-        if (category) {
-          state.category = category.dataset.category;
-          render();
-          return;
-        }
+        if (category) { state.category = category.dataset.category; render(); return; }
         const payment = event.target.closest("[data-payment]");
-        if (payment) {
-          state.payment = payment.dataset.payment;
-          render();
-        }
+        if (payment) { state.payment = payment.dataset.payment; render(); }
       });
-
-      $("#submit").addEventListener("click", submit);
-      $("#navSubmit").addEventListener("click", submit);
+      $("#submit").addEventListener("click", submitTransaction);
       $("#saveKey").addEventListener("click", () => {
         const key = $("#apiKey").value.trim();
-        if (!key) {
-          setStatus("密鑰不能空白", "error");
-          return;
-        }
+        if (!key) { setStatus($("#settingsStatus"), "密鑰不能空白", "error"); return; }
         localStorage.setItem(KEY_STORAGE, key);
-        setStatus("密鑰已存在這台手機", "ok");
+        setStatus($("#settingsStatus"), "密鑰已存在這台手機", "ok");
+        syncData();
       });
-      $("#currency").addEventListener("change", () => {
-        state.currency = $("#currency").value;
-        localStorage.setItem("ledgerCurrency", state.currency);
-      });
+      $("#syncNow").addEventListener("click", syncData);
+      $("#currency").addEventListener("change", () => { state.currency = $("#currency").value; localStorage.setItem("ledgerCurrency", state.currency); });
+      $("#monthFilter").addEventListener("change", () => { state.month = $("#monthFilter").value || monthIso(); syncData(); render(); });
+      $("#analysisMonth").addEventListener("change", () => { state.month = $("#analysisMonth").value || monthIso(); syncData(); render(); });
+      $("#scopeFilter").addEventListener("change", () => { state.scopeFilter = $("#scopeFilter").value; render(); });
+      $("#analysisScope").addEventListener("change", () => { state.scopeFilter = $("#analysisScope").value; render(); });
 
-      $("#date").value = todayIso();
-      $("#currency").value = state.currency;
-      storeQueryKey();
-      $("#apiKey").value = localStorage.getItem(KEY_STORAGE) || "";
-      render();
+      function init() {
+        const url = new URL(location.href);
+        const key = url.searchParams.get("key");
+        if (key) {
+          localStorage.setItem(KEY_STORAGE, key);
+          url.searchParams.delete("key");
+          history.replaceState(null, "", url.toString());
+        }
+        state.data = normalizeData(state.data);
+        $("#date").value = todayIso();
+        $("#monthFilter").value = state.month;
+        $("#analysisMonth").value = state.month;
+        render();
+        syncData();
+      }
+      init();
     </script>
   </body>
 </html>
