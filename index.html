@@ -103,9 +103,6 @@
 
       window.addEventListener("load", () => {
         document.getElementById("openLedger").href = LEDGER_URL;
-        setTimeout(() => {
-          window.location.replace(LEDGER_URL);
-        }, 450);
       });
     </script>
   </head>
@@ -114,7 +111,7 @@
       <img class="icon" src="./apple-touch-icon.png" alt="" />
       <section class="panel" aria-label="手機記帳啟動頁">
         <h1>手機記帳</h1>
-        <p>正在開啟你的共用帳本。</p>
+        <p>一鍵開啟你的共用帳本。</p>
         <a id="openLedger" href="https://script.google.com/macros/s/AKfycbzTTIWcLmhzvJFV0oP0oMrkr_94Y0te7FXPbAiB54XPRs8_Bi5DLk3p_90dzXYSWjye/exec">開啟手機記帳</a>
       </section>
     </main>
