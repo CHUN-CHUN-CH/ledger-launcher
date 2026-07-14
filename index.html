@@ -225,14 +225,14 @@
         bottom: 0;
         z-index: 10;
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         gap: 6px;
         padding: 10px 10px max(10px, env(safe-area-inset-bottom));
         border-top: 1px solid var(--border);
         background: rgba(246, 249, 248, 0.94);
         backdrop-filter: blur(18px);
       }
-      .nav button { min-height: 52px; color: var(--muted); }
+      .nav button { min-height: 52px; color: var(--muted); font-size: 15px; }
       .nav button.active { background: #fff; color: var(--primary); box-shadow: 0 8px 24px rgba(34, 54, 54, 0.12); }
 
       @media (max-width: 380px) {
@@ -340,6 +340,62 @@
         </div>
       </section>
 
+      <section class="view" id="fixedView">
+        <div class="card">
+          <h2>固定項目</h2>
+          <div class="segmented three" aria-label="固定項目類型">
+            <button type="button" class="active" data-fixed-kind="expense">固定支出</button>
+            <button type="button" data-fixed-kind="income">固定收入</button>
+            <button type="button" data-fixed-kind="investment">定期投資</button>
+          </div>
+          <label>名稱<input id="fixedName" type="text" placeholder="例如 Netflix、房租、0050 定期定額" autocomplete="off" /></label>
+          <label>金額<input id="fixedAmount" type="number" inputmode="decimal" min="0" step="1" placeholder="0" /></label>
+          <div class="split">
+            <label>開始日期<input id="fixedStart" type="date" /></label>
+            <label>每月幾號扣款<input id="fixedDueDay" type="number" inputmode="numeric" min="1" max="31" placeholder="5" /></label>
+          </div>
+          <div class="split">
+            <label>頻率
+              <select id="fixedFrequency">
+                <option value="monthly">每月</option>
+                <option value="weekly">每週</option>
+                <option value="quarterly">每季</option>
+                <option value="yearly">每年</option>
+                <option value="custom_months">自訂月數</option>
+              </select>
+            </label>
+            <label>間隔<input id="fixedInterval" type="number" inputmode="numeric" min="1" value="1" /></label>
+          </div>
+          <label>狀態
+            <select id="fixedStatusMode">
+              <option value="active">啟用，到期自動記帳</option>
+              <option value="paused">暫停，只保留設定不自動記帳</option>
+            </select>
+          </label>
+          <div class="split">
+            <label>幣別<select id="fixedCurrency"></select></label>
+            <label>帳本
+              <select id="fixedScope">
+                <option value="personal">自己花費</option>
+                <option value="home">家裡開銷</option>
+              </select>
+            </label>
+          </div>
+          <div class="split">
+            <label>分類<select id="fixedCategory"></select></label>
+            <label>付款方式<select id="fixedPayment"></select></label>
+          </div>
+          <label>備註<textarea id="fixedNote" placeholder="可不填"></textarea></label>
+          <button id="saveRecurring" class="primary" type="button">儲存固定項目</button>
+          <button id="ensureTrigger" class="primary secondary" type="button">啟用每日自動扣款</button>
+          <div id="fixedStatus" class="status">固定項目會在到期日自動建立交易，不用每月手動記一次</div>
+        </div>
+        <div class="card">
+          <div class="row"><h2>已設定項目</h2><span class="muted" id="fixedCount"></span></div>
+          <div id="fixedList" class="list"></div>
+        </div>
+      </section>
+
       <section class="view" id="settingsView">
         <div class="card">
           <h2>同步設定</h2>
@@ -403,6 +459,7 @@
       <button class="active" type="button" data-view="home">首頁</button>
       <button type="button" data-view="entry">記帳</button>
       <button type="button" data-view="records">明細</button>
+      <button type="button" data-view="fixed">固定</button>
       <button type="button" data-view="analysis">分析</button>
       <button type="button" data-view="settings">設定</button>
     </nav>
@@ -432,6 +489,7 @@
         category: localStorage.getItem("ledgerCategory") || "餐飲",
         payment: localStorage.getItem("ledgerPayment") || "dbs",
         currency: localStorage.getItem("ledgerCurrency") || "TWD",
+        fixedKind: localStorage.getItem("ledgerFixedKind") || "expense",
         month: monthIso(),
         scopeFilter: "all",
         data: loadCachedData()
@@ -489,6 +547,23 @@
           merchant: row.merchant || "",
           note: row.note || ""
         })).filter((row) => row.date);
+        copy.recurring = (copy.recurring || []).map((row) => ({
+          id: row.recurring_id || "",
+          name: row.name || "",
+          type: row.transaction_type || "expense",
+          amount: Number(row.amount || 0),
+          currency: row.currency || "TWD",
+          category: categoryName(row.category_id, copy.categories),
+          payment: paymentName(row.payment_id, copy.payments),
+          scope: row.account_scope || "personal",
+          frequency: row.frequency || "monthly",
+          interval: Number(row.interval_value || 1),
+          dueDay: row.due_day || "",
+          nextDueDate: String(row.next_due_date || "").slice(0, 10),
+          status: row.status || "active",
+          autoGenerate: row.auto_generate !== false && row.auto_generate !== "FALSE",
+          note: row.note || ""
+        }));
         return copy;
       }
 
@@ -553,6 +628,7 @@
         renderEntry();
         renderHome();
         renderRecords();
+        renderFixed();
         renderAnalysis();
         renderSettings();
       }
@@ -626,6 +702,48 @@
         const rows = monthTransactions(state.month, state.scopeFilter);
         $("#recordCount").textContent = `${rows.length} 筆`;
         $("#recordsList").innerHTML = rows.length ? rows.map(recordHtml).join("") : `<div class="empty">這個月份沒有資料</div>`;
+      }
+      function fixedTransactionType() {
+        return state.fixedKind === "income" ? "income" : "expense";
+      }
+      function fixedDefaultCategory() {
+        if (state.fixedKind === "investment") return "投資";
+        return fixedTransactionType() === "income" ? "薪資" : "訂閱";
+      }
+      function frequencyLabel(value, interval = 1) {
+        const labels = { weekly: "每週", monthly: "每月", quarterly: "每季", yearly: "每年", custom_months: `每 ${interval} 個月` };
+        return labels[value] || value || "每月";
+      }
+      function statusLabel(value) {
+        const labels = { active: "進行中", paused: "已暫停", completed: "已完成", cancelled: "已取消" };
+        return labels[value] || value || "未設定";
+      }
+      function renderFixed() {
+        document.querySelectorAll("[data-fixed-kind]").forEach((button) => button.classList.toggle("active", button.dataset.fixedKind === state.fixedKind));
+        const type = fixedTransactionType();
+        const categories = availableCategories(type);
+        const selectedCategory = categories.includes(fixedDefaultCategory()) ? fixedDefaultCategory() : categories[0];
+        $("#fixedCurrency").innerHTML = currencies.map((item) => `<option value="${item}" ${item === state.currency ? "selected" : ""}>${item}</option>`).join("");
+        $("#fixedCategory").innerHTML = categories.map((item) => `<option value="${item}" ${item === selectedCategory ? "selected" : ""}>${item}</option>`).join("");
+        $("#fixedPayment").innerHTML = availablePayments().map((item) => `<option value="${item.id}" ${item.id === state.payment ? "selected" : ""}>${item.name}</option>`).join("");
+        $("#fixedScope").value = state.scope;
+        const buttonText = state.fixedKind === "investment" ? "儲存定期定額投資" : state.fixedKind === "income" ? "儲存固定收入" : "儲存固定支出";
+        $("#saveRecurring").textContent = buttonText;
+        $("#fixedStatusMode").value = state.fixedKind === "income" ? "paused" : "active";
+        const rows = (state.data.recurring || []).filter((row) => row.status !== "cancelled").sort((a, b) => (a.nextDueDate || "").localeCompare(b.nextDueDate || ""));
+        $("#fixedCount").textContent = `${rows.length} 個`;
+        $("#fixedList").innerHTML = rows.length ? rows.map((row) => `
+          <div class="record">
+            <div>
+              <strong>${row.name || "未命名"}</strong>
+              <small>${labelScope(row.scope)} · ${row.category} · ${frequencyLabel(row.frequency, row.interval)} · 下次 ${row.nextDueDate || "未設定"}</small>
+            </div>
+            <div class="record-side">
+              <strong>${money(row.amount)}</strong>
+              <small>${statusLabel(row.status)}</small>
+            </div>
+          </div>
+        `).join("") : `<div class="empty">還沒有固定項目</div>`;
       }
       function renderAnalysis() {
         $("#analysisMonth").value = state.month;
@@ -815,6 +933,74 @@
         }
       }
 
+      async function saveRecurringItem() {
+        const key = currentKey();
+        const amount = Number($("#fixedAmount").value || 0);
+        const name = $("#fixedName").value.trim();
+        const startDate = $("#fixedStart").value || todayIso();
+        const dueDay = Number($("#fixedDueDay").value || startDate.slice(-2));
+        if (!key) { setStatus($("#fixedStatus"), "請先到設定儲存寫入密鑰", "error"); state.view = "settings"; render(); return; }
+        if (!name) { setStatus($("#fixedStatus"), "請輸入固定項目名稱", "error"); return; }
+        if (!amount || amount <= 0) { setStatus($("#fixedStatus"), "請輸入金額", "error"); return; }
+        if (dueDay < 1 || dueDay > 31) { setStatus($("#fixedStatus"), "扣款日請填 1 到 31", "error"); return; }
+        localStorage.setItem(KEY_STORAGE, key);
+        localStorage.setItem("ledgerFixedKind", state.fixedKind);
+        localStorage.setItem("ledgerScope", $("#fixedScope").value);
+        localStorage.setItem("ledgerPayment", $("#fixedPayment").value);
+        localStorage.setItem("ledgerCurrency", $("#fixedCurrency").value);
+        $("#saveRecurring").disabled = true;
+        setStatus($("#fixedStatus"), "正在儲存固定項目...");
+        try {
+          const type = fixedTransactionType();
+          const category = state.fixedKind === "investment" ? "投資" : $("#fixedCategory").value;
+          const result = await jsonp({
+            action: "saveRecurring",
+            key,
+            name,
+            type,
+            scope: $("#fixedScope").value,
+            category,
+            amount,
+            currency: $("#fixedCurrency").value,
+            payment: $("#fixedPayment").value,
+            frequency: $("#fixedFrequency").value,
+            interval_value: $("#fixedInterval").value || 1,
+            start_date: startDate,
+            next_due_date: startDate,
+            due_day: dueDay,
+            status: $("#fixedStatusMode").value,
+            note: $("#fixedNote").value.trim(),
+            auto_generate: $("#fixedStatusMode").value === "active"
+          });
+          if (!result || !result.ok) throw new Error((result && result.error) || "儲存固定項目失敗");
+          setStatus($("#fixedStatus"), "已儲存。到期後會由每日排程自動建立交易。", "ok");
+          $("#fixedName").value = "";
+          $("#fixedAmount").value = "";
+          $("#fixedNote").value = "";
+          await syncData();
+        } catch (error) {
+          setStatus($("#fixedStatus"), String(error.message || error), "error");
+        } finally {
+          $("#saveRecurring").disabled = false;
+        }
+      }
+
+      async function ensureRecurringTrigger() {
+        const key = currentKey();
+        if (!key) { setStatus($("#fixedStatus"), "請先到設定儲存寫入密鑰", "error"); state.view = "settings"; render(); return; }
+        $("#ensureTrigger").disabled = true;
+        setStatus($("#fixedStatus"), "正在確認每日自動扣款排程...");
+        try {
+          const result = await jsonp({ action: "ensureRecurringTrigger", key });
+          if (!result || !result.ok) throw new Error((result && result.error) || "啟用排程失敗");
+          setStatus($("#fixedStatus"), "每日自動扣款排程已啟用。", "ok");
+        } catch (error) {
+          setStatus($("#fixedStatus"), String(error.message || error), "error");
+        } finally {
+          $("#ensureTrigger").disabled = false;
+        }
+      }
+
       document.addEventListener("click", (event) => {
         const edit = event.target.closest("[data-edit-id]");
         if (edit) { openEdit(edit.dataset.editId); return; }
@@ -830,8 +1016,12 @@
         if (category) { state.category = category.dataset.category; render(); return; }
         const payment = event.target.closest("[data-payment]");
         if (payment) { state.payment = payment.dataset.payment; render(); }
+        const fixedKind = event.target.closest("[data-fixed-kind]");
+        if (fixedKind) { state.fixedKind = fixedKind.dataset.fixedKind; localStorage.setItem("ledgerFixedKind", state.fixedKind); render(); return; }
       });
       $("#submit").addEventListener("click", submitTransaction);
+      $("#saveRecurring").addEventListener("click", saveRecurringItem);
+      $("#ensureTrigger").addEventListener("click", ensureRecurringTrigger);
       $("#editForm").addEventListener("submit", saveEdit);
       $("#closeEdit").addEventListener("click", closeEdit);
       $("#cancelEdit").addEventListener("click", closeEdit);
@@ -861,6 +1051,8 @@
         }
         state.data = normalizeData(state.data);
         $("#date").value = todayIso();
+        $("#fixedStart").value = todayIso();
+        $("#fixedDueDay").value = String(new Date().getDate());
         $("#monthFilter").value = state.month;
         $("#analysisMonth").value = state.month;
         render();
