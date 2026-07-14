@@ -157,8 +157,50 @@
       }
       .record + .record { margin-top: 9px; }
       .record strong { overflow-wrap: anywhere; }
+      .record-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .mini {
+        min-height: 38px;
+        padding: 0 12px;
+        border-color: var(--border);
+        color: var(--primary);
+        background: #fff;
+        font-size: 14px;
+      }
+      .mini.danger { color: var(--danger); }
       .list { display: grid; gap: 9px; }
       .empty { padding: 18px; border: 1px dashed var(--border); border-radius: 8px; color: var(--muted); text-align: center; font-weight: 800; }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        z-index: 30;
+        display: none;
+        place-items: end center;
+        padding: 18px 14px max(18px, env(safe-area-inset-bottom));
+        background: rgba(14, 24, 24, 0.42);
+      }
+      .modal.active { display: grid; }
+      .modal-card {
+        width: min(100%, 540px);
+        max-height: min(88vh, 720px);
+        overflow: auto;
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+      .modal-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 4px;
+      }
 
       .filters {
         position: sticky;
@@ -300,6 +342,50 @@
       </section>
     </main>
 
+    <div class="modal" id="editModal" aria-hidden="true">
+      <form class="modal-card" id="editForm">
+        <div class="row">
+          <div>
+            <h2>編輯明細</h2>
+            <span class="muted">改錯分類、品名、金額或日期</span>
+          </div>
+          <button class="mini" type="button" id="closeEdit">關閉</button>
+        </div>
+        <input id="editId" type="hidden" />
+        <div class="split">
+          <label>類型
+            <select id="editType">
+              <option value="expense">支出</option>
+              <option value="income">收入</option>
+            </select>
+          </label>
+          <label>日期<input id="editDate" type="date" /></label>
+        </div>
+        <div class="split">
+          <label>金額<input id="editAmount" type="number" inputmode="decimal" min="0" step="1" /></label>
+          <label>幣別<select id="editCurrency"></select></label>
+        </div>
+        <div class="split">
+          <label>帳本
+            <select id="editScope">
+              <option value="personal">自己花費</option>
+              <option value="home">家裡開銷</option>
+            </select>
+          </label>
+          <label>分類<select id="editCategory"></select></label>
+        </div>
+        <label>品名<input id="editMerchant" type="text" autocomplete="off" /></label>
+        <label>付款方式<select id="editPayment"></select></label>
+        <label>備註<textarea id="editNote"></textarea></label>
+        <div id="editStatus" class="status">修改後會同步到 Google Sheets</div>
+        <button class="primary" id="saveEdit" type="submit">儲存修改</button>
+        <div class="modal-actions">
+          <button class="secondary" id="cancelEdit" type="button">取消</button>
+          <button class="mini danger" id="deleteEdit" type="button">刪除這筆</button>
+        </div>
+      </form>
+    </div>
+
     <nav class="nav" aria-label="主選單">
       <button class="active" type="button" data-view="home">首頁</button>
       <button type="button" data-view="entry">記帳</button>
@@ -371,6 +457,9 @@
 
       function normalizeData(data) {
         const copy = data || emptyData();
+        copy.categories = copy.categories || [];
+        copy.payments = copy.payments || [];
+        copy.budgets = copy.budgets || [];
         copy.transactions = (copy.transactions || []).map((row) => ({
           id: row.transaction_id || row.id || "",
           type: row.transaction_type || "expense",
@@ -379,26 +468,27 @@
           amount: Number(row.amount_twd || row.original_amount || 0),
           originalAmount: Number(row.original_amount || row.amount_twd || 0),
           currency: row.currency || "TWD",
-          category: categoryName(row.category_id),
-          payment: paymentName(row.payment_id),
+          categoryId: row.category_id || "",
+          paymentId: row.payment_id || "",
+          exchangeRate: row.exchange_rate || "",
+          category: categoryName(row.category_id, copy.categories),
+          payment: paymentName(row.payment_id, copy.payments),
           merchant: row.merchant || "",
           note: row.note || ""
         })).filter((row) => row.date);
-        copy.categories = copy.categories || [];
-        copy.payments = copy.payments || [];
-        copy.budgets = copy.budgets || [];
         return copy;
       }
 
-      function categoryName(value) {
+      function categoryName(value, categories = state.data.categories || []) {
         const text = String(value || "").trim();
         if (!text) return "其他支出";
-        const found = (state.data.categories || []).find((row) => row.category_id === text || row.name === text);
+        const found = categories.find((row) => row.category_id === text || row.name === text);
+        if (!found && /^cat_/i.test(text)) return "未分類";
         return found ? found.name : text;
       }
-      function paymentName(value) {
+      function paymentName(value, payments = state.data.payments || []) {
         const text = String(value || "").trim();
-        const found = (state.data.payments || []).find((row) => row.payment_id === text || row.id === text || row.card_name === text);
+        const found = payments.find((row) => row.payment_id === text || row.id === text || row.card_name === text);
         if (found) return found.card_name || found.name || text;
         return seedPayments.find((row) => row.id === text)?.name || text || "未分類付款";
       }
@@ -562,7 +652,94 @@
         const cls = row.type === "income" ? "income-text" : "danger-text";
         const title = [labelScope(row.scope), row.category, row.merchant].filter(Boolean).join(" · ");
         const meta = [row.date.slice(5).replace("-", "/"), row.currency !== "TWD" ? `${row.currency} ${row.originalAmount.toLocaleString("zh-TW")}` : "", row.payment, row.note].filter(Boolean).join(" · ");
-        return `<div class="record"><div><strong>${title || "未命名"}</strong><small>${meta}</small></div><strong class="${cls}">${sign}${money(row.amount)}</strong></div>`;
+        const actions = row.id ? `<div class="record-actions"><button class="mini" type="button" data-edit-id="${row.id}">編輯</button><button class="mini danger" type="button" data-delete-id="${row.id}">刪除</button></div>` : "";
+        return `<div class="record"><div><strong>${title || "未命名"}</strong><small>${meta}</small>${actions}</div><strong class="${cls}">${sign}${money(row.amount)}</strong></div>`;
+      }
+
+      function currentKey() {
+        return localStorage.getItem(KEY_STORAGE) || $("#apiKey").value.trim();
+      }
+      function transactionById(id) {
+        return (state.data.transactions || []).find((row) => row.id === id);
+      }
+      function renderEditOptions(row) {
+        const type = $("#editType").value || row.type || "expense";
+        const categories = availableCategories(type);
+        const categoryValue = row.category || categories[0];
+        $("#editCurrency").innerHTML = currencies.map((item) => `<option value="${item}" ${item === (row.currency || "TWD") ? "selected" : ""}>${item}</option>`).join("");
+        $("#editCategory").innerHTML = categories.map((item) => `<option value="${item}" ${item === categoryValue ? "selected" : ""}>${item}</option>`).join("");
+        $("#editPayment").innerHTML = availablePayments().map((item) => `<option value="${item.id}" ${item.id === (row.paymentId || row.payment) ? "selected" : ""}>${item.name}</option>`).join("");
+      }
+      function openEdit(id) {
+        const row = transactionById(id);
+        if (!row) return;
+        $("#editId").value = row.id;
+        $("#editType").value = row.type;
+        $("#editDate").value = row.date || todayIso();
+        $("#editAmount").value = row.originalAmount || row.amount || "";
+        $("#editScope").value = row.scope || "personal";
+        $("#editMerchant").value = row.merchant || "";
+        $("#editNote").value = row.note || "";
+        renderEditOptions(row);
+        $("#editCategory").value = row.category || categoryName(row.categoryId);
+        $("#editPayment").value = row.paymentId || paymentId(row.payment);
+        setStatus($("#editStatus"), "修改後會同步到 Google Sheets");
+        $("#editModal").classList.add("active");
+        $("#editModal").setAttribute("aria-hidden", "false");
+      }
+      function closeEdit() {
+        $("#editModal").classList.remove("active");
+        $("#editModal").setAttribute("aria-hidden", "true");
+      }
+      async function saveEdit(event) {
+        event.preventDefault();
+        const key = currentKey();
+        const id = $("#editId").value;
+        const amount = Number($("#editAmount").value || 0);
+        if (!key) { setStatus($("#editStatus"), "請先到設定儲存寫入密鑰", "error"); return; }
+        if (!id) { setStatus($("#editStatus"), "找不到這筆明細", "error"); return; }
+        if (!amount || amount <= 0) { setStatus($("#editStatus"), "請輸入金額", "error"); return; }
+        $("#saveEdit").disabled = true;
+        setStatus($("#editStatus"), "正在儲存修改...");
+        try {
+          const result = await jsonp({
+            action: "updateTransaction",
+            key,
+            id,
+            type: $("#editType").value,
+            scope: $("#editScope").value,
+            category: $("#editCategory").value,
+            merchant: $("#editMerchant").value.trim(),
+            amount,
+            currency: $("#editCurrency").value,
+            payment: $("#editPayment").value,
+            date: $("#editDate").value || todayIso(),
+            note: $("#editNote").value.trim()
+          });
+          if (!result || !result.ok) throw new Error((result && result.error) || "儲存失敗");
+          setStatus($("#editStatus"), "已儲存修改", "ok");
+          await syncData();
+          closeEdit();
+        } catch (error) {
+          setStatus($("#editStatus"), String(error.message || error), "error");
+        } finally {
+          $("#saveEdit").disabled = false;
+        }
+      }
+      async function deleteTransaction(id = $("#editId").value) {
+        const key = currentKey();
+        if (!key) { setStatus($("#editStatus"), "請先到設定儲存寫入密鑰", "error"); return; }
+        if (!id) return;
+        if (!confirm("確定刪除這筆明細？")) return;
+        setStatus($("#editStatus"), "正在刪除...");
+        try {
+          const result = await jsonp({ action: "deleteTransaction", key, id });
+          if (!result || !result.ok) throw new Error((result && result.error) || "刪除失敗");
+          await syncData();
+          closeEdit();
+        } catch (error) {
+          setStatus($("#editStatus"), String(error.message || error), "error");
+        }
       }
 
       async function syncData() {
@@ -626,6 +803,10 @@
       }
 
       document.addEventListener("click", (event) => {
+        const edit = event.target.closest("[data-edit-id]");
+        if (edit) { openEdit(edit.dataset.editId); return; }
+        const del = event.target.closest("[data-delete-id]");
+        if (del) { openEdit(del.dataset.deleteId); deleteTransaction(del.dataset.deleteId); return; }
         const nav = event.target.closest("[data-view]");
         if (nav) { state.view = nav.dataset.view; render(); return; }
         const go = event.target.closest("[data-go]");
@@ -640,6 +821,11 @@
         if (payment) { state.payment = payment.dataset.payment; render(); }
       });
       $("#submit").addEventListener("click", submitTransaction);
+      $("#editForm").addEventListener("submit", saveEdit);
+      $("#closeEdit").addEventListener("click", closeEdit);
+      $("#cancelEdit").addEventListener("click", closeEdit);
+      $("#deleteEdit").addEventListener("click", () => deleteTransaction());
+      $("#editType").addEventListener("change", () => renderEditOptions({ type: $("#editType").value, currency: $("#editCurrency").value, paymentId: $("#editPayment").value, category: $("#editCategory").value }));
       $("#saveKey").addEventListener("click", () => {
         const key = $("#apiKey").value.trim();
         if (!key) { setStatus($("#settingsStatus"), "密鑰不能空白", "error"); return; }
